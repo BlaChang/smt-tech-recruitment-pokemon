@@ -45,6 +45,13 @@ export interface MonSpec {
   moves: string[];
   /** Placeholder sprite color until real art lands. */
   color: string;
+  /**
+   * Which way the art was drawn to look. Sprites are shared between the
+   * player's side and the foe's, so the renderer mirrors them to make
+   * combatants face each other; without this it cannot tell which ones
+   * already point the right way. Omitted means left, the majority.
+   */
+  faces?: 'left' | 'right';
   /** What the professor says when you hover this one. */
   blurb?: string;
   /** Said when it is sent out. */
@@ -89,6 +96,7 @@ export const STARTERS: MonSpec[] = [
     defense: 11,
     moves: ['announcement', 'scheduleSlip', 'herdVolunteers', 'rollback'],
     color: '#4a7fc1',
+    faces: 'right',
     blurb: 'A seagull who runs tournaments. Loud, unbothered, has never once been on time and never once been late.',
     sendLine: 'GOOSE screams. Somehow, everyone knows where to go.',
   },

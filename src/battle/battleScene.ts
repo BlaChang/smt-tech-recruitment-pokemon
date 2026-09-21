@@ -16,6 +16,7 @@ import {
   UI_ATLAS,
 } from '../ui/frame';
 import { applyMove, chooseEnemyMove, createMon, healsLeft, isFainted, type MonState } from './engine';
+import { facesAway } from './facing';
 import { move } from './moves';
 import { randomQuestion, type MathQuestion } from './questions';
 import { LEADER_TEAM, playerTeam, SHIELDED_MON_ID, type MonSpec } from './teams';
@@ -539,7 +540,7 @@ export class BattleScene implements Scene {
     const top = feet - h;
 
     if (art && spec) {
-      r.sprite(art, 0, 0, spec.frameW, spec.frameH, x, top, true);
+      r.sprite(art, 0, 0, spec.frameW, spec.frameH, x, top, true, facesAway(mon.spec, isFoe));
     } else {
       r.rect(x, top, w, h, mon.spec.color, true);
       r.strokeRect(x, top, w, h, '#2a2438', true);

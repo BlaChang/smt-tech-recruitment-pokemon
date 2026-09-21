@@ -209,7 +209,13 @@ bottom-aligned.
 | --- | --- |
 | blobheart | photo, downscaled and keyed from `art-source/mons/blobheart.png` |
 | francis | pixel art at target size, used verbatim |
-| goose, maytrix, pieuler | generated placeholder |
+| goose | pixel art at target size, used verbatim |
+| maytrix, pieuler | generated placeholder |
+
+One sprite serves both sides of the battlefield, so art drawn facing the
+wrong way for a slot is mirrored at draw time rather than edited on disk.
+Set `faces: 'right'` on the mon's spec in `src/battle/teams.ts` when a
+drawing points right, as GOOSE does; left is the default.
 
 ## Formats
 

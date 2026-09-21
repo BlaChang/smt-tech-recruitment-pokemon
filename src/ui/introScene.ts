@@ -6,6 +6,7 @@ import { INTRO } from '../content/intro';
 import { ScriptRunner } from '../content/script';
 import type { GameState } from '../state/gameState';
 import { STARTERS } from '../battle/teams';
+import { facesAway } from '../battle/facing';
 import { assets } from '../engine/assets';
 import { audio } from '../engine/audio';
 import { Menu } from './menu';
@@ -143,9 +144,11 @@ export class IntroScene implements Scene {
       const spec = assets.spec(`mon:${starter.id}`);
       if (art && spec) {
         // Battle sprites are 64px; scale down so all three fit on the floor.
+        // The line-up is the player's side of the field, so they all face
+        // right, the way they will when you send them out.
         r.sprite(
           art, 0, 0, spec.frameW, spec.frameH,
-          x, feet - PREVIEW_SIZE, true, false, PREVIEW_SIZE, PREVIEW_SIZE,
+          x, feet - PREVIEW_SIZE, true, facesAway(starter, false), PREVIEW_SIZE, PREVIEW_SIZE,
         );
       } else {
         r.rect(x, feet - PREVIEW_SIZE, PREVIEW_SIZE, PREVIEW_SIZE, starter.color, true);
