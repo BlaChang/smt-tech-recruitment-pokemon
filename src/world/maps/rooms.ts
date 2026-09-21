@@ -81,6 +81,7 @@ const HALL: RoomDef = {
   name: 'HALL OF FAME',
   x: 1,
   y: 2,
+  // Exactly six displays, evenly spaced along the far wall.
   rows: [
     '######DD#######',
     '#{...........}#',
@@ -91,7 +92,7 @@ const HALL: RoomDef = {
     '#,,,,,,,,,,,,,#',
     '#.............#',
     '#.............#',
-    '#.S.S.S.S.S.S.#',
+    '#.............#',
     '#.............#',
     '#[...........]#',
     '######DD#######',

@@ -20,9 +20,15 @@ Touch devices get a "play this on a laptop" notice rather than a broken canvas.
 
 ### Jump to any stage while developing
 
-`?dev=intro` · `play` · `puzzle` · `solved` · `leader` · `battle` · `won` · `registry`
+`?dev=intro` · `play` · `panels` · `hall` · `rival` · `arena` · `battle` · `won` · `registry`
 
-Stripped from production builds. Use these instead of replaying the gym.
+Add `&starter=francis|goose|blobheart` to pick a starter, and `&phase=menu`
+to drop straight into battle move-select.
+
+Standing in the panel room also prints a worked Lights Out solution to the
+console, refreshed after every press.
+
+All of this is stripped from production builds.
 
 ## Where things live
 
@@ -37,6 +43,7 @@ Stripped from production builds. Use these instead of replaying the gym.
 | Move names, power, effects | `src/battle/moves.ts` |
 | The shield-breaker math questions | `src/battle/questions.ts` |
 | Application fields | `src/app/registry.ts` |
+| Hall of Fame projects and their links | `src/content/projects.ts` |
 | UI panel placement and colours | `src/ui/frame.ts` |
 | Text rendering and glyph substitution | `src/ui/bitmapFont.ts` |
 
@@ -49,7 +56,7 @@ whichever room you are standing in, so you never see the void between them.
 | --- | --- |
 | Entrance hall | NPCs, one idea about SMT each |
 | Panel room | 3x3 Lights Out on floor buttons; the door north stays shut until all nine are lit |
-| Hall of Fame | Plaques recording what SMT tech has shipped |
+| Hall of Fame | Six displays, one per shipped project, each able to link out |
 | Rival room | Your rival, chosen by your starter; the door north stays shut until you win |
 | Arena | Arpit Ransaria |
 

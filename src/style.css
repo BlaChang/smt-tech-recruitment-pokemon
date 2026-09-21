@@ -170,7 +170,7 @@ html, body {
 
 .registry-actions button:disabled { opacity: 0.6; cursor: wait; }
 
-#gl2-link {
+#project-link {
   font-size: 12px;
   letter-spacing: 0.04em;
   color: #ffd45e;
@@ -179,4 +179,4 @@ html, body {
   opacity: 0.85;
 }
 
-#gl2-link:hover { opacity: 1; }
+#project-link:hover { opacity: 1; }

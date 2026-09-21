@@ -1,15 +1,10 @@
+import { logSolution } from '../app/devSolver';
+import { clearProjectLink } from '../app/projectLink';
 import { openRegistry } from '../app/registry';
 import type { Telemetry } from '../app/telemetry';
 import { BattleScene, type Opponent } from '../battle/battleScene';
 import { rivalFor, rivalTeam } from '../battle/rivals';
-import {
-  EXIT_PROMPT,
-  GATE_OPENS,
-  HALL_PLAQUES,
-  HALL_SIGNS,
-  SIGN_PLAQUE,
-  SIGN_RULES,
-} from '../content/dialogue';
+import { EXIT_PROMPT, GATE_OPENS, HALL_PLAQUES, SIGN_PLAQUE, SIGN_RULES } from '../content/dialogue';
 import { NPCS } from '../content/npcs';
 import { ScriptRunner, type Script } from '../content/script';
 import { assets } from '../engine/assets';
@@ -64,6 +59,8 @@ export class Overworld implements Scene {
   private justWarped = false;
   /** Doorway fade: null when the player has control. */
   private transition: Transition | null = null;
+  /** Tracks room changes, so the dev solver prints on arrival. */
+  private lastRoomId: string | null = null;
 
   constructor(private deps: OverworldDeps) {
     const { state } = deps;
@@ -86,6 +83,10 @@ export class Overworld implements Scene {
 
   onEnter(): void {
     audio.playMusic('gym');
+    // Covers starting inside the room, where no step ever fires.
+    const room = roomAt(this.player.tileX, this.player.tileY);
+    this.lastRoomId = room?.id ?? null;
+    if (room?.id === 'panels') logSolution(this.deps.state.panels);
   }
 
   update(input: Input): void {
@@ -136,6 +137,15 @@ export class Overworld implements Scene {
       return;
     }
     this.justWarped = false;
+
+    const room = roomAt(x, y);
+    if (room?.id !== this.lastRoomId) {
+      this.lastRoomId = room?.id ?? null;
+      if (room?.id === 'panels') logSolution(this.deps.state.panels);
+      // A project link should not follow the player out of the hall.
+      if (room?.id !== 'hall') clearProjectLink();
+    }
+
     this.persist();
   }
 
@@ -149,6 +159,7 @@ export class Overworld implements Scene {
     state.panels = pressPanel(state.panels, cell);
     state.panelPresses++;
     audio.play('panel');
+    logSolution(state.panels);
     if (panelsSolved(state.panels)) {
       setFlag(state, 'puzzle:panels');
       state.puzzleSolvedAtMs = Date.now() - state.startedAtMs;
@@ -244,12 +255,11 @@ export class Overworld implements Scene {
     const tile = gymMap.at(x, y);
     const room = roomAt(x, y);
 
-    // In the Hall of Fame every console and plaque reads differently, indexed
+    // Each display in the Hall of Fame shows a different project, indexed
     // left to right along the wall.
-    if (room?.id === 'hall' && (tile === 'C' || tile === 'S')) {
-      const list = tile === 'C' ? HALL_PLAQUES : HALL_SIGNS;
+    if (room?.id === 'hall' && tile === 'C') {
       const index = Math.floor((x - room.x - 2) / 2);
-      return list[Math.max(0, Math.min(list.length - 1, index))];
+      return HALL_PLAQUES[index] ?? null;
     }
 
     if (tile === 'S') return SIGN_PLAQUE;

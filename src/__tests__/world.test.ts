@@ -6,6 +6,8 @@ import { ROOMS, WARPS, roomAt } from '../world/maps/rooms';
 import { NPCS } from '../content/npcs';
 import { panelCellAt } from '../world/overworld';
 import { tileDef } from '../world/tilemap';
+import { PROJECT_COUNT, PROJECTS } from '../content/projects';
+import { HALL_PLAQUES } from '../content/dialogue';
 
 const solid = (x: number, y: number) => gymMap.isSolid(x, y);
 
@@ -159,5 +161,64 @@ describe('inhabitants', () => {
   it('spawns the player on open ground in the entrance hall', () => {
     expect(solid(PLAYER_SPAWN.x, PLAYER_SPAWN.y)).toBe(false);
     expect(roomAt(PLAYER_SPAWN.x, PLAYER_SPAWN.y)?.id).toBe('entry');
+  });
+});
+
+describe('hall of fame', () => {
+  it('has exactly one display per project', () => {
+    const hall = ROOMS.find((r) => r.id === 'hall');
+    const displays = gymMap
+      .findAll('C')
+      .filter((t) => roomAt(t.x, t.y)?.id === 'hall');
+    expect(PROJECT_COUNT).toBe(6);
+    expect(displays, 'one display per project, no more').toHaveLength(PROJECT_COUNT);
+    expect(hall).toBeDefined();
+  });
+
+  it('leaves nothing else in the hall to read', () => {
+    const readable = ['S'].flatMap((c) => gymMap.findAll(c));
+    expect(readable.filter((t) => roomAt(t.x, t.y)?.id === 'hall')).toHaveLength(0);
+  });
+
+  it('maps each display left to right onto its project', () => {
+    const hall = ROOMS.find((r) => r.id === 'hall');
+    const displays = gymMap
+      .findAll('C')
+      .filter((t) => roomAt(t.x, t.y)?.id === 'hall')
+      .sort((a, b) => a.x - b.x);
+    displays.forEach((tile, i) => {
+      expect(Math.floor((tile.x - (hall?.x ?? 0) - 2) / 2)).toBe(i);
+    });
+  });
+
+  it('can be stood in front of: every display has floor below it', () => {
+    for (const tile of gymMap.findAll('C').filter((t) => roomAt(t.x, t.y)?.id === 'hall')) {
+      expect(solid(tile.x, tile.y + 1), `no room to stand at ${tile.x},${tile.y}`).toBe(false);
+    }
+  });
+});
+
+describe('project links', () => {
+  it('offers no link while the urls are unset', () => {
+    // Placeholder state: nothing to click until SMT fills these in.
+    for (const project of PROJECTS) {
+      const mentionsLink = JSON.stringify(
+        HALL_PLAQUES[PROJECTS.indexOf(project)].filter((c) => 'say' in c),
+      ).includes('link');
+      expect(mentionsLink, `${project.id} promises a link it does not have`).toBe(
+        project.url !== '',
+      );
+    }
+  });
+
+  it('names every project on its plaque', () => {
+    PROJECTS.forEach((project, i) => {
+      const said = HALL_PLAQUES[i]
+        .filter((c): c is { say: string } => 'say' in c && typeof c.say === 'string')
+        .map((c) => c.say)
+        .join(' ');
+      expect(said).toContain(project.name);
+      expect(said).toContain(project.blurb);
+    });
   });
 });

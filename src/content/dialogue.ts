@@ -1,6 +1,8 @@
 import type { Script } from './script';
 import { hasFlag } from '../state/gameState';
 import { rivalFor } from '../battle/rivals';
+import { PROJECTS } from './projects';
+import { showProjectLink } from '../app/projectLink';
 
 /**
  * All player-facing gym copy lives here. Rewriting the pitch should never
@@ -160,28 +162,19 @@ export const RIVAL_ENCOUNTER: Script = [
 ];
 
 /**
- * The Hall of Fame. In the games this is where your team is recorded; here
- * the plaques record what SMT tech has actually shipped.
+ * One plaque per project, in the order they stand along the wall.
  *
- * NOTE FOR SMT: these are placeholders. Replace them with real projects.
+ * A project with a url also puts a clickable link under the screen; one
+ * without simply does not mention it.
  */
-export const HALL_PLAQUES: Script[] = [
-  [{ say: 'REGISTRATION — hundreds of teams, every one of them wanting a different thing.' }],
-  [{ say: 'THE GRADING PIPELINE — tens of thousands of answers, ranked before the closing ceremony.' }],
-  [{ say: 'THE LIVE SCOREBOARD — a thousand people refreshing it at once, on the worst possible wifi.' }],
-  [{ say: 'THE ANSWER-SHEET SCANNER — it reads handwriting. Mostly. It has opinions about sevens.' }],
-  [{ say: 'THE WEBSITE — the part everyone sees, and the part everyone has notes about.' }],
-  [{ say: 'THE TOURNAMENT-DAY DASHBOARD — built in a week, used for four hours, worth every hour.' }],
-];
-
-export const HALL_SIGNS: Script[] = [
-  [{ say: 'HALL OF FAME\nEverything on these walls started as somebody saying "we should just build it".' }],
-  [{ say: 'Nothing here was assigned. That is the part worth understanding.' }],
-  [{ say: 'Some of these were rewritten three times. Two of them still are not finished.' }],
-  [{ say: 'The names come off the plaques every year. The code mostly stays.' }],
-  [{ say: 'If your project ends up on this wall, somebody will inherit it. Write it kindly.' }],
-  [{ say: 'There is space left on this wall. That is deliberate.' }],
-];
+export const HALL_PLAQUES: Script[] = PROJECTS.map((project) => [
+  { run: () => showProjectLink(project.name, project.url) },
+  { say: `${project.name}\n${project.blurb}` },
+  ...(project.url
+    ? ([{ say: 'A link to it is under the screen.' }] as Script)
+    : ([] as Script)),
+  { track: `project:${project.id}` },
+]);
 
 export const SIGN_PLAQUE: Script = [
   { say: 'STANFORD MATH TOURNAMENT — THE GYM\n"We ship it before the closing ceremony."' },
