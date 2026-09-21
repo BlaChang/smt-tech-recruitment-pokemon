@@ -9,7 +9,9 @@ import {
   NPC_SCALE,
   NPC_WACKY,
   NPC_WARSTORY,
+  RIVAL_ENCOUNTER,
 } from './dialogue';
+import { rivalFor } from '../battle/rivals';
 
 /** Room-local coordinates, resolved to absolute tiles below. */
 function inRoom(id: string, dx: number, dy: number): { x: number; y: number } {
@@ -77,6 +79,18 @@ export const NPCS: NpcDef[] = [
     tag: 'PZ',
     script: NPC_HINT,
     turnsToFace: true,
+  },
+  {
+    // Which rival this is depends on the starter, so the sprite is resolved
+    // at draw time rather than baked in here.
+    id: 'rival',
+    ...inRoom('rival', 7, 4),
+    facing: 'down',
+    color: '#d4643c',
+    tag: 'RV',
+    script: RIVAL_ENCOUNTER,
+    turnsToFace: true,
+    spriteFor: (state) => `char:${rivalFor(state.starter).sprite}`,
   },
   {
     id: 'leader',

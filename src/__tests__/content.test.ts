@@ -61,10 +61,8 @@ describe('funnel stages', () => {
     expect(currentStage(state)).toBe('attempting-panels');
     state.flags.add('puzzle:panels');
     expect(currentStage(state)).toBe('cleared-panels');
-    state.flags.add('puzzle:boulders');
-    expect(currentStage(state)).toBe('cleared-crates');
-    state.flags.add('puzzle:gates');
-    expect(currentStage(state)).toBe('cleared-gates');
+    state.flags.add('rival:beaten');
+    expect(currentStage(state)).toBe('beat-rival');
     state.battleWon = true;
     expect(currentStage(state)).toBe('beat-leader');
     state.applied = true;

@@ -1,5 +1,5 @@
 import type { Move } from './moves';
-import type { MonSpec } from './teams';
+import { typeMultiplier, type MonSpec } from './teams';
 
 export interface MonState {
   spec: MonSpec;
@@ -57,7 +57,8 @@ export function computeDamage(
   const attack = attacker.spec.attack * stageMultiplier(attacker.attackStage);
   const defense = defender.spec.defense * stageMultiplier(defender.defenseStage);
   const variance = 0.85 + rng() * 0.15;
-  const raw = mv.power * (attack / defense) * DAMAGE_SCALE * variance;
+  const matchup = typeMultiplier(attacker.spec.type, defender.spec.type);
+  const raw = mv.power * (attack / defense) * DAMAGE_SCALE * variance * matchup;
   return Math.max(1, Math.round(raw));
 }
 
@@ -67,6 +68,8 @@ export interface MoveResult {
   healed: number;
   recoil: number;
   blockedByShield: boolean;
+  /** Type matchup applied to this hit: >1 super effective, <1 resisted. */
+  matchup: number;
   statText?: string;
   /**
    * True only when a stat stage actually changed. A move can report a stat
@@ -89,6 +92,7 @@ export function applyMove(
     healed: 0,
     recoil: 0,
     blockedByShield: false,
+    matchup: 1,
     statChanged: false,
   };
 
@@ -98,6 +102,7 @@ export function applyMove(
   }
 
   if (mv.power > 0) {
+    result.matchup = typeMultiplier(attacker.spec.type, defender.spec.type);
     let damage = computeDamage(attacker, defender, mv, rng);
     if (defender.shielded) {
       damage = 1;

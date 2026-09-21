@@ -33,6 +33,9 @@ export const CHARACTER_KEYS = [
   'wacky',
   'hint',
   'leader',
+  'rivalCalista',
+  'rivalRitwin',
+  'rivalBlake',
 ] as const;
 
 export type CharacterKey = (typeof CHARACTER_KEYS)[number];

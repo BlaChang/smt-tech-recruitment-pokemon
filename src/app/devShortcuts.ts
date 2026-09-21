@@ -13,15 +13,15 @@ export type DevStage =
   | 'intro'
   | 'play'
   | 'panels'
-  | 'boulders'
-  | 'gates'
+  | 'hall'
+  | 'rival'
   | 'arena'
   | 'battle'
   | 'won'
   | 'registry';
 
 const STAGES: DevStage[] = [
-  'intro', 'play', 'panels', 'boulders', 'gates', 'arena', 'battle', 'won', 'registry',
+  'intro', 'play', 'panels', 'hall', 'rival', 'arena', 'battle', 'won', 'registry',
 ];
 
 /** Drops the player just inside a room, with the puzzles before it solved. */
@@ -59,19 +59,21 @@ export function applyDevShortcut(state: GameState): DevStage | null {
     case 'panels':
       enter(state, 'panels', []);
       break;
-    case 'boulders':
-      enter(state, 'boulders', ['panels']);
+    case 'hall':
+      enter(state, 'hall', ['panels']);
       break;
-    case 'gates':
-      enter(state, 'gates', ['panels', 'boulders']);
+    case 'rival':
+      enter(state, 'rival', ['panels']);
       break;
     case 'arena':
     case 'battle':
     case 'registry':
-      enter(state, 'arena', ['panels', 'boulders', 'gates']);
+      enter(state, 'arena', ['panels']);
+      setFlag(state, 'rival:beaten');
       break;
     case 'won':
-      enter(state, 'arena', ['panels', 'boulders', 'gates']);
+      enter(state, 'arena', ['panels']);
+      setFlag(state, 'rival:beaten');
       state.battleWon = true;
       break;
   }

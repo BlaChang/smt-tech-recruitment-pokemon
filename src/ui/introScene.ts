@@ -9,6 +9,7 @@ import { STARTERS } from '../battle/teams';
 import { assets } from '../engine/assets';
 import { audio } from '../engine/audio';
 import { Menu } from './menu';
+import { drawTypeTriangle } from './typeTriangle';
 
 /** Where the lab floor starts; everyone in this scene stands on it. */
 const FLOOR_Y = 86;
@@ -17,6 +18,8 @@ const FLOOR_Y = 86;
 const PREVIEW_SIZE = 28;
 /** The portrait hangs above the floor, clear of the starters standing on it. */
 const PORTRAIT_BOTTOM = 56;
+/** Set by the intro script while the type triangle should be on screen. */
+export const TRIANGLE_FLAG = 'intro:types';
 const PREVIEW_X = 6;
 const PREVIEW_PITCH = 32;
 import { TextBox } from './textbox';
@@ -47,6 +50,7 @@ export class IntroScene implements Scene {
       renderer: deps.renderer,
       state: deps.state,
       startBattle: () => {},
+      startRivalBattle: () => {},
       openRegistry: () => {},
       askName: () => deps.askName(() => this.runner.resume()),
       track: (event, data) => deps.track(event, data),
@@ -73,7 +77,9 @@ export class IntroScene implements Scene {
     r.rect(0, FLOOR_Y, VIEW_W, VIEW_H - FLOOR_Y, '#241f3d', true);
     r.rect(0, FLOOR_Y, VIEW_W, 1, '#3a3459', true);
 
-    this.drawProfessor(r);
+    // While he is explaining matchups, the diagram takes his place.
+    if (this.deps.state.flags.has(TRIANGLE_FLAG)) drawTypeTriangle(r, 42);
+    else this.drawProfessor(r);
     this.drawStarters(r);
 
     // The speaker plate on the text box already names him; no caption needed.

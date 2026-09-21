@@ -41,6 +41,20 @@ export const INTRO: Script = [
   { askName: true },
   { say: 'Right! So your name is {name}!', as: PROF },
   {
+    say: 'Before you pick, one thing you have to know. SMT runs on three sides, and they answer to each other.',
+    as: PROF,
+  },
+  { setFlag: 'intro:types' },
+  {
+    say: 'PW beats TD. TD beats TECH. TECH beats PW. Round and round, with no side on top.',
+    as: PROF,
+  },
+  {
+    say: 'Attack into the side you beat and it lands hard. Attack into the side that beats you and it barely lands at all.',
+    as: PROF,
+  },
+  { run: (ctx) => { ctx.state.flags.delete('intro:types'); } },
+  {
     say: 'You will not get far in there alone, {name}. Go on — one of these three is yours.',
     as: PROF,
   },

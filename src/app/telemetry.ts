@@ -16,10 +16,9 @@ export interface TelemetrySnapshot {
   stage: string;
   npcsTalkedTo: string[];
   starter: string | null;
-  puzzlesSolved: string[];
+  milestones: string[];
   panelPresses: number;
-  boulderPushes: number;
-  gateTurns: number;
+  rivalTurns: number;
   puzzleSolvedMs: number | null;
   battleTurns: number;
   battleWon: boolean;
@@ -64,10 +63,9 @@ export class Telemetry {
       stage: currentStage(state),
       npcsTalkedTo: npcsTalkedTo(state),
       starter: state.starter,
-      puzzlesSolved: puzzlesSolved(state),
+      milestones: puzzlesSolved(state),
       panelPresses: state.panelPresses,
-      boulderPushes: state.boulderPushes,
-      gateTurns: state.gateTurns,
+      rivalTurns: state.rivalTurns,
       puzzleSolvedMs: state.puzzleSolvedAtMs,
       battleTurns: state.battleTurns,
       battleWon: state.battleWon,
@@ -134,8 +132,7 @@ export class Telemetry {
 export function currentStage(state: GameState): string {
   if (state.applied) return 'applied';
   if (state.battleWon) return 'beat-leader';
-  if (state.flags.has('puzzle:gates')) return 'cleared-gates';
-  if (state.flags.has('puzzle:boulders')) return 'cleared-crates';
+  if (state.flags.has('rival:beaten')) return 'beat-rival';
   if (state.flags.has('puzzle:panels')) return 'cleared-panels';
   if (state.panelPresses > 0) return 'attempting-panels';
   if (state.starter) return 'has-team';

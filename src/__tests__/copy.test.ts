@@ -5,6 +5,7 @@ import * as DIALOGUE from '../content/dialogue';
 import { paginate } from '../ui/textbox';
 import type { Renderer } from '../engine/renderer';
 import type { Script, ScriptCommand } from '../content/script';
+import { createGameState, type GameState } from '../state/gameState';
 
 /**
  * The game draws with a fixed bitmap font, so copy that fits in a proportional
@@ -32,9 +33,30 @@ const LINES_PER_PAGE = 3;
 const renderer = { measure: width } as unknown as Renderer;
 
 /** Every line of dialogue, with the speaker that says it. */
+/** Resolves dynamic lines against every starter, so all variants are checked. */
+const SAMPLE_STATES = ['blobheart', 'goose', 'francis'].map((starter) => ({
+  ...createGameState(),
+  starter,
+  playerName: 'NAME',
+}));
+
+function texts(value: unknown): string[] {
+  if (typeof value === 'string') return [value];
+  if (typeof value === 'function') {
+    return SAMPLE_STATES.map((s) => (value as (st: GameState) => string)(s));
+  }
+  return [];
+}
+
 function lines(script: Script, out: Array<{ text: string; as?: string }> = []) {
   for (const cmd of script as ScriptCommand[]) {
-    if ('say' in cmd) out.push({ text: cmd.say, as: cmd.as });
+    if ('say' in cmd) {
+      const speakers = texts(cmd.as);
+      for (const text of texts(cmd.say)) {
+        out.push({ text, as: speakers[0] });
+      }
+      for (const as of speakers.slice(1)) out.push({ text: '', as });
+    }
     if ('choice' in cmd) {
       for (const option of cmd.choice) out.push({ text: option });
       for (const branch of cmd.branch) lines(branch, out);
@@ -54,7 +76,10 @@ function lines(script: Script, out: Array<{ text: string; as?: string }> = []) {
 function everything(): Array<{ text: string; as?: string }> {
   const scripts: Script[] = [INTRO];
   for (const value of Object.values(DIALOGUE)) {
-    if (Array.isArray(value)) scripts.push(value as Script);
+    if (!Array.isArray(value)) continue;
+    // Some exports are arrays of scripts (the Hall of Fame plaques).
+    if (Array.isArray(value[0])) scripts.push(...(value as Script[]));
+    else scripts.push(value as Script);
   }
   return scripts.flatMap((s) => lines(s));
 }
@@ -110,5 +135,19 @@ describe('player-facing copy', () => {
   it('introduces the professor by his full name', () => {
     const intro = lines(INTRO).map((l) => l.text).join(' ');
     expect(intro).toContain('PROFESSOR JUSTIN SYMMETREE');
+  });
+
+  it('explains the type triangle before asking the player to choose', () => {
+    const intro = lines(INTRO).map((l) => l.text).join(' ');
+    expect(intro).toMatch(/PW beats TD/);
+    expect(intro).toMatch(/TD beats TECH/);
+    expect(intro).toMatch(/TECH beats PW/);
+  });
+
+  it('names every rival somewhere in the copy', () => {
+    const all = everything().map((l) => `${l.text} ${l.as ?? ''}`).join(' ');
+    for (const name of ['CALISTA', 'RITWIN', 'BLAKE']) {
+      expect(all, `${name} is never mentioned`).toContain(name);
+    }
   });
 });

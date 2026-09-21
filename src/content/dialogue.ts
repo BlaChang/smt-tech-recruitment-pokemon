@@ -1,7 +1,6 @@
 import type { Script } from './script';
 import { hasFlag } from '../state/gameState';
-import { hasGl2Calculator } from '../app/config';
-import { revealGl2Link } from '../app/toolLink';
+import { rivalFor } from '../battle/rivals';
 
 /**
  * All player-facing gym copy lives here. Rewriting the pitch should never
@@ -105,22 +104,15 @@ export const NPC_WACKY: Script = [
 
 export const NPC_HINT: Script = [
   { setFlag: 'talked:hint' },
-  { say: 'Stuck on the floor? Step on a panel and it flips itself and its four neighbors.', as: 'PUZZLER' },
-  { say: 'Light all sixteen. Order does not matter, and stepping on the same panel twice undoes it.', as: 'PUZZLER' },
+  { say: 'Stuck on the floor? Step on a panel and it flips itself and its four neighbours.', as: 'PUZZLER' },
+  { say: 'Light all nine. Order does not matter, and stepping on the same panel twice undoes it.', as: 'PUZZLER' },
   {
     choice: ['Give me a real hint', 'I want to solve it myself'],
     branch: [
       [
-        { say: 'Fine. Each panel is either pressed or not pressed. Sixteen unknowns, and everything is mod 2.', as: 'PUZZLER' },
-        { say: 'So it is a linear system over GF(2). Solve it like one. Or flail at it — that also works.', as: 'PUZZLER' },
+        { say: 'Fine. Each panel flips itself and its four neighbours. Nine of them, everything mod 2.', as: 'PUZZLER' },
+        { say: 'So it is a linear system over GF(2). Solve it like one, or brute force it. Both count.', as: 'PUZZLER' },
         { track: 'hint:taken' },
-        {
-          ifState: () => hasGl2Calculator(),
-          then: [
-            { run: () => revealGl2Link() },
-            { say: 'Here, take my solver. Link is under the screen. Using it is not cheating; it is the actual method.', as: 'PUZZLER' },
-          ],
-        },
       ],
       [
         { say: 'Correct answer. I will be right here.', as: 'PUZZLER' },
@@ -128,6 +120,67 @@ export const NPC_HINT: Script = [
       ],
     ],
   },
+];
+
+/** Your rival, chosen by which starter you took. */
+export const RIVAL_ENCOUNTER: Script = [
+  {
+    ifFlag: 'rival:beaten',
+    then: [
+      {
+        say: (s) => `${rivalFor(s.starter).defeated}`,
+        as: (s) => rivalFor(s.starter).name,
+      },
+      { say: 'ARPIT is through the north door. Good luck. You will need some.', as: (s) => rivalFor(s.starter).name },
+    ],
+    otherwise: [
+      { say: 'Hold on, {name}. Nobody walks past me to reach ARPIT.', as: (s) => rivalFor(s.starter).name },
+      { say: (s) => rivalFor(s.starter).taunt, as: (s) => rivalFor(s.starter).name },
+      {
+        say: 'You remember the triangle SYMMETREE drew? Look at what I am holding, then look at yours.',
+        as: (s) => rivalFor(s.starter).name,
+      },
+      { track: 'rival:start' },
+      { rivalBattle: true },
+      {
+        ifFlag: 'rival:beaten',
+        then: [
+          { say: (s) => rivalFor(s.starter).defeated, as: (s) => rivalFor(s.starter).name },
+          { setFlag: 'talked:rival' },
+        ],
+        otherwise: [
+          {
+            say: 'Told you. Type matchups are not a suggestion. Come back when you have worked it out.',
+            as: (s) => rivalFor(s.starter).name,
+          },
+        ],
+      },
+    ],
+  },
+];
+
+/**
+ * The Hall of Fame. In the games this is where your team is recorded; here
+ * the plaques record what SMT tech has actually shipped.
+ *
+ * NOTE FOR SMT: these are placeholders. Replace them with real projects.
+ */
+export const HALL_PLAQUES: Script[] = [
+  [{ say: 'REGISTRATION — hundreds of teams, every one of them wanting a different thing.' }],
+  [{ say: 'THE GRADING PIPELINE — tens of thousands of answers, ranked before the closing ceremony.' }],
+  [{ say: 'THE LIVE SCOREBOARD — a thousand people refreshing it at once, on the worst possible wifi.' }],
+  [{ say: 'THE ANSWER-SHEET SCANNER — it reads handwriting. Mostly. It has opinions about sevens.' }],
+  [{ say: 'THE WEBSITE — the part everyone sees, and the part everyone has notes about.' }],
+  [{ say: 'THE TOURNAMENT-DAY DASHBOARD — built in a week, used for four hours, worth every hour.' }],
+];
+
+export const HALL_SIGNS: Script[] = [
+  [{ say: 'HALL OF FAME\nEverything on these walls started as somebody saying "we should just build it".' }],
+  [{ say: 'Nothing here was assigned. That is the part worth understanding.' }],
+  [{ say: 'Some of these were rewritten three times. Two of them still are not finished.' }],
+  [{ say: 'The names come off the plaques every year. The code mostly stays.' }],
+  [{ say: 'If your project ends up on this wall, somebody will inherit it. Write it kindly.' }],
+  [{ say: 'There is space left on this wall. That is deliberate.' }],
 ];
 
 export const SIGN_PLAQUE: Script = [
@@ -140,7 +193,7 @@ export const SIGN_RULES: Script = [
 ];
 
 export const LOCKED_GATE: Script = [
-  { say: 'The door is sealed. The panels behind you are not all lit.' },
+  { say: 'The door is sealed. The nine panels behind you are not all lit.' },
 ];
 
 export const GATE_OPENS: Script = [

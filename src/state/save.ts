@@ -1,6 +1,6 @@
 import { createGameState, type GameState } from './gameState';
 
-const KEY = 'smt-tech-gym:save:v2';
+const KEY = 'smt-tech-gym:save:v3';
 
 type SavePayload = Omit<GameState, 'flags'> & { flags: string[] };
 
@@ -34,14 +34,6 @@ export function load(): GameState | null {
         Array.isArray(parsed.panels) && parsed.panels.length === fresh.panels.length
           ? parsed.panels
           : fresh.panels,
-      boulders:
-        Array.isArray(parsed.boulders) && parsed.boulders.length === fresh.boulders.length
-          ? parsed.boulders
-          : fresh.boulders,
-      gates:
-        Array.isArray(parsed.gates) && parsed.gates.length === fresh.gates.length
-          ? parsed.gates
-          : fresh.gates,
     };
   } catch {
     return null;

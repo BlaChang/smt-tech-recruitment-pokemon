@@ -11,21 +11,22 @@ function rng(seed: number): () => number {
 }
 
 describe('lights out', () => {
-  it('is configured for the gym s 2x2 board', () => {
-    expect(SIZE).toBe(2);
+  it('is configured for the gym s 3x3 board', () => {
+    expect(SIZE).toBe(3);
   });
 
   it('toggles a panel and its orthogonal neighbours only', () => {
-    // On a 2x2 every panel touches both of its neighbours but not the diagonal.
-    expect(affected(0).sort()).toEqual([0, 1, 2]);
-    expect(affected(3).sort()).toEqual([1, 2, 3]);
+    // Centre of a 3x3 touches all four neighbours; a corner touches two.
+    expect(affected(4).sort((a, b) => a - b)).toEqual([1, 3, 4, 5, 7]);
+    expect(affected(0).sort((a, b) => a - b)).toEqual([0, 1, 3]);
+    expect(affected(8).sort((a, b) => a - b)).toEqual([5, 7, 8]);
     // The solver still works at other sizes.
-    expect(affected(5, 4).sort()).toEqual([1, 4, 5, 6, 9]);
+    expect(affected(5, 4).sort((a, b) => a - b)).toEqual([1, 4, 5, 6, 9]);
   });
 
   it('is involutive: pressing the same panel twice is a no-op', () => {
     const board = seedBoard(rng(7));
-    expect(press(press(board, 2), 2)).toEqual(board);
+    expect(press(press(board, 4), 4)).toEqual(board);
   });
 
   it('produces seeds that are unsolved but always solvable', () => {

@@ -57,6 +57,9 @@ function harness(choose = 0) {
     openRegistry: () => {
       registries++;
     },
+    startRivalBattle: () => {
+      battles++;
+    },
     askName: () => {
       nameAsks++;
     },

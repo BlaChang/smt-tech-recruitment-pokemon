@@ -1,6 +1,7 @@
 import { TILE } from '../engine/config';
 import type { Renderer } from '../engine/renderer';
 import type { Script } from '../content/script';
+import type { GameState } from '../state/gameState';
 import { drawCharacter } from './characterSprite';
 import type { Direction } from './direction';
 
@@ -14,8 +15,13 @@ export interface NpcDef {
   /** Two-letter tag drawn on the placeholder sprite. */
   tag: string;
   script: Script;
-  /** Most NPCs turn to look at you; the leader holds her pose. */
+  /** Most NPCs turn to look at you; the leader holds his pose. */
   turnsToFace?: boolean;
+  /**
+   * Overrides the sprite slot. Used by the rival, whose identity depends on
+   * which starter the player took.
+   */
+  spriteFor?: (state: GameState) => string;
 }
 
 export class Npc {
@@ -33,10 +39,11 @@ export class Npc {
     return this.def.y;
   }
 
-  render(r: Renderer): void {
+  render(r: Renderer, state?: GameState): void {
     const px = this.x * TILE;
     const py = this.y * TILE;
-    if (drawCharacter(r, `char:${this.def.id}`, px, py, this.facing, 0, false)) return;
+    const slot = (state && this.def.spriteFor?.(state)) ?? `char:${this.def.id}`;
+    if (drawCharacter(r, slot, px, py, this.facing, 0, false)) return;
 
     r.rect(px + 2, py + 1, TILE - 4, TILE - 2, this.def.color);
     r.strokeRect(px + 2, py + 1, TILE - 4, TILE - 2, '#2a2438');

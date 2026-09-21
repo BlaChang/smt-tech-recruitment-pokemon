@@ -18,7 +18,7 @@ import {
 import { applyMove, chooseEnemyMove, createMon, healsLeft, isFainted, type MonState } from './engine';
 import { move } from './moves';
 import { randomQuestion, type MathQuestion } from './questions';
-import { LEADER_TEAM, playerTeam, SHIELDED_MON_ID } from './teams';
+import { LEADER_TEAM, playerTeam, SHIELDED_MON_ID, type MonSpec } from './teams';
 
 /**
  * Field layout, sized for 64x64 combatants on a 240x160 panel. Each sprite is
@@ -35,9 +35,25 @@ type Step = string | (() => void) | { wait: number };
 
 type Phase = 'busy' | 'menu' | 'question' | 'done';
 
+/** Who the player is fighting. Arpit is the default; rivals pass their own. */
+export interface Opponent {
+  /** Shown in battle messages, e.g. "CALISTA sent out GOOSE!". */
+  name: string;
+  team: MonSpec[];
+  /** Mon that hides behind the math-question shield, if any. */
+  shieldedId?: string;
+}
+
+export const ARPIT: Opponent = {
+  name: 'ARPIT',
+  team: LEADER_TEAM,
+  shieldedId: SHIELDED_MON_ID,
+};
+
 export interface BattleDeps {
   renderer: Renderer;
   state: GameState;
+  opponent?: Opponent;
   track(event: string, data?: Record<string, unknown>): void;
   onEnd(won: boolean): void;
 }
@@ -63,9 +79,14 @@ export class BattleScene implements Scene {
   private foeFlash = 0;
   private ticks = 0;
 
+  private readonly opponent: Opponent;
+
   constructor(private deps: BattleDeps) {
+    this.opponent = deps.opponent ?? ARPIT;
     this.party = playerTeam(deps.state.starter).map((spec) => createMon(spec));
-    this.foes = LEADER_TEAM.map((spec) => createMon(spec, spec.id === SHIELDED_MON_ID));
+    this.foes = this.opponent.team.map((spec) =>
+      createMon(spec, spec.id === this.opponent.shieldedId),
+    );
   }
 
   private get active(): MonState {
@@ -94,7 +115,7 @@ export class BattleScene implements Scene {
       return;
     }
     this.queue(
-      `ARPIT sent out ${this.foe.spec.name}!`,
+      `${this.opponent.name} sent out ${this.foe.spec.name}!`,
       this.foe.spec.sendLine ?? '',
       `Go, ${this.active.spec.name}!`,
       this.active.spec.sendLine ?? '',
@@ -263,8 +284,11 @@ export class BattleScene implements Scene {
 
     if (result.blockedByShield) {
       lines.push(`${defender.spec.name}'s SHIELD absorbed almost all of it!`);
-    } else if (mv.flavor && result.damage > 0) {
-      lines.push(mv.flavor);
+    } else if (result.damage > 0) {
+      // The type triangle is the main lever the player controls, so say so.
+      if (result.matchup > 1) lines.push("It's super effective!");
+      else if (result.matchup < 1) lines.push("It's not very effective...");
+      else if (mv.flavor) lines.push(mv.flavor);
     }
 
     // Only when HP actually came back: a spent heal reports "no patches left".
@@ -284,7 +308,7 @@ export class BattleScene implements Scene {
       this.finish(true);
       return;
     }
-    this.queue(`ARPIT sent out ${this.foe.spec.name}!`, this.foe.spec.sendLine ?? '', () => {
+    this.queue(`${this.opponent.name} sent out ${this.foe.spec.name}!`, this.foe.spec.sendLine ?? '', () => {
       if (this.foe.shielded) this.askQuestion(true);
       else this.toMenu();
     });
@@ -303,8 +327,8 @@ export class BattleScene implements Scene {
     this.question = randomQuestion();
     this.queue(
       first
-        ? 'ARPIT: That shield does not come down for force. It comes down for arithmetic.'
-        : 'ARPIT: Not it. Try this one.',
+        ? `${this.opponent.name}: That shield does not come down for force. It comes down for arithmetic.`
+        : `${this.opponent.name}: Not it. Try this one.`,
       this.question.prompt,
       () => {
         this.phase = 'question';
@@ -323,7 +347,7 @@ export class BattleScene implements Scene {
     if (picked === question.answer) {
       this.deps.track('math:correct', { attempts: this.deps.state.mathAttempts });
       this.queue(
-        `ARPIT: ${question.reward}`,
+        `${this.opponent.name}: ${question.reward}`,
         () => {
           this.foe.shielded = false;
           this.foeFlash = 20;
@@ -336,7 +360,7 @@ export class BattleScene implements Scene {
 
     // Never a dead end: a wrong answer costs a turn, then a fresh question.
     this.deps.track('math:wrong', { attempts: this.deps.state.mathAttempts });
-    this.queue('ARPIT: No. And that hesitation cost you.', () => {
+    this.queue(`${this.opponent.name}: No. And that hesitation cost you.`, () => {
       const moves = this.foe.spec.moves.map(move);
       const chosen = chooseEnemyMove(this.foe, moves);
       this.steps.unshift(
@@ -364,9 +388,11 @@ export class BattleScene implements Scene {
     });
     if (won) audio.play('badge');
     this.queue(
-      won ? 'ARPIT is out of usable mons!' : `${this.lastActive.spec.name} cannot continue...`,
       won
-        ? `${this.deps.state.playerName || 'You'} beat the SMT GYM!`
+        ? `${this.opponent.name} is out of usable mons!`
+        : `${this.lastActive.spec.name} cannot continue...`,
+      won
+        ? `${this.deps.state.playerName || 'You'} won!`
         : 'You are out of the running... for about thirty seconds. Nothing is lost.',
       () => this.deps.onEnd(won),
     );

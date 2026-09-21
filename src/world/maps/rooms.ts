@@ -43,23 +43,26 @@ const ENTRY: RoomDef = {
 };
 
 /**
- * First puzzle: a 2x2 Lights Out on four floor panels.
+ * First puzzle: a 3x3 Lights Out on nine floor panels.
  *
- * The panels sit off to one side rather than astride the doorway column, so
- * walking through the room cannot solve the puzzle by accident.
+ * Panels sit two tiles apart so any one can be reached without stepping on
+ * another, and the block is offset from the doorway column so walking
+ * through the room cannot solve it by accident.
  */
 const PANELS: RoomDef = {
   id: 'panels',
   name: 'PANEL ROOM',
   x: 1,
-  y: 18,
+  y: 17,
   rows: [
     '######DD#######',
     '#{...........}#',
     '#.............#',
-    '#.......b.b...#',
+    '#....b.b.b....#',
     '#.............#',
-    '#.......b.b...#',
+    '#....b.b.b....#',
+    '#.............#',
+    '#....b.b.b....#',
     '#.............#',
     '#..C.......C..#',
     '#.............#',
@@ -68,48 +71,50 @@ const PANELS: RoomDef = {
   ],
 };
 
-/** Second puzzle: push two blocks into their sockets. */
-const BOULDERS: RoomDef = {
-  id: 'boulders',
-  name: 'CRATE ROOM',
+/**
+ * The Hall of Fame, borrowed from what sits past the Elite Four -- except
+ * the plaques record what SMT tech has actually shipped. Every console along
+ * the walls is readable.
+ */
+const HALL: RoomDef = {
+  id: 'hall',
+  name: 'HALL OF FAME',
   x: 1,
-  y: 4,
+  y: 2,
   rows: [
     '######DD#######',
     '#{...........}#',
-    '#....o....o...#',
+    '#.C.C.C.C.C.C.#',
     '#.............#',
     '#.............#',
-    '#..P.......P..#',
-    '#....O...O....#',
+    '#,,,,,,,,,,,,,#',
+    '#,,,,,,,,,,,,,#',
     '#.............#',
     '#.............#',
-    '#.............#',
+    '#.S.S.S.S.S.S.#',
     '#.............#',
     '#[...........]#',
     '######DD#######',
   ],
 };
 
-/** Third puzzle: rotating gates, in the spirit of the Fortree City gym. */
-const GATES: RoomDef = {
-  id: 'gates',
-  name: 'GATE ROOM',
+/** Where your rival is waiting. Narrow, so you cannot walk around them. */
+const RIVAL: RoomDef = {
+  id: 'rival',
+  name: 'RIVAL ROOM',
   x: 20,
   y: 4,
-  // Three gates, each filling a one-tile-wide gap in a wall. A gate's arms
-  // span the whole gap, so the only way north is to spin each one upright.
   rows: [
     '######DD#######',
     '#{...........}#',
     '#.............#',
-    '######.G.######',
+    '#..P.......P..#',
     '#.............#',
     '#.............#',
-    '###.G.#########',
     '#.............#',
     '#.............#',
-    '#########.G.###',
+    '#..P.......P..#',
+    '#.............#',
     '#.............#',
     '#[...........]#',
     '######DD#######',
@@ -142,7 +147,7 @@ const ARENA: RoomDef = {
   ],
 };
 
-export const ROOMS: RoomDef[] = [ENTRY, PANELS, BOULDERS, GATES, ARENA];
+export const ROOMS: RoomDef[] = [ENTRY, PANELS, HALL, RIVAL, ARENA];
 
 export interface Warp {
   /** Door tile the player steps on. */
@@ -187,26 +192,26 @@ function pair(
 
 const NEEDS_PANELS = {
   requires: 'puzzle:panels',
-  lockedMessage: 'The door will not open. Four panels are dark behind you.',
+  lockedMessage: 'The door will not open. Nine panels are dark behind you.',
 };
-const NEEDS_BOULDERS = {
-  requires: 'puzzle:boulders',
-  lockedMessage: 'Sealed. Both crates need to be seated in their sockets.',
+const NEEDS_RIVAL = {
+  requires: 'rival:beaten',
+  lockedMessage: 'Your rival is still standing between you and that door.',
 };
+
 export const WARPS: Warp[] = [
-  // Entry -> Panels (and back)
-  ...pair(ENTRY, 6, 0, PANELS, 6, 9, 'up'),
-  ...pair(PANELS, 6, 10, ENTRY, 6, 1, 'down'),
-  // Panels -> Boulders, gated on the light puzzle
-  ...pair(PANELS, 6, 0, BOULDERS, 6, 11, 'up', NEEDS_PANELS),
-  ...pair(BOULDERS, 6, 12, PANELS, 6, 1, 'down'),
-  // Boulders -> Gates, gated on the crates
-  ...pair(BOULDERS, 6, 0, GATES, 6, 11, 'up', NEEDS_BOULDERS),
-  ...pair(GATES, 6, 12, BOULDERS, 6, 1, 'down'),
-  // Gates -> Arena, gated on the rotating gates
-  // No lock here: the gates themselves are the lock.
-  ...pair(GATES, 6, 0, ARENA, 7, 11, 'up'),
-  ...pair(ARENA, 7, 12, GATES, 6, 1, 'down'),
+  // Entry -> Panels
+  ...pair(ENTRY, 6, 0, PANELS, 6, 11, 'up'),
+  ...pair(PANELS, 6, 12, ENTRY, 6, 1, 'down'),
+  // Panels -> Hall of Fame, gated on the light puzzle
+  ...pair(PANELS, 6, 0, HALL, 6, 11, 'up', NEEDS_PANELS),
+  ...pair(HALL, 6, 12, PANELS, 6, 1, 'down'),
+  // Hall of Fame -> Rival
+  ...pair(HALL, 6, 0, RIVAL, 6, 11, 'up'),
+  ...pair(RIVAL, 6, 12, HALL, 6, 1, 'down'),
+  // Rival -> Arena, gated on beating them
+  ...pair(RIVAL, 6, 0, ARENA, 7, 11, 'up', NEEDS_RIVAL),
+  ...pair(ARENA, 7, 12, RIVAL, 6, 1, 'down'),
 ];
 
 /** Room containing a tile, or null if the tile is in the void between rooms. */

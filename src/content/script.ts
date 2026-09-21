@@ -6,9 +6,23 @@ import { hasFlag, setFlag, type GameState } from '../state/gameState';
 
 export type Script = ScriptCommand[];
 
+/**
+ * Dialogue text, either fixed or derived from state.
+ *
+ * Most lines are constants. A few -- your rival's name and their taunts --
+ * depend on which starter you took, and cannot be known when the script is
+ * written.
+ */
+export type Text = string | ((state: GameState) => string);
+
+function resolve(text: Text | undefined, state: GameState): string | undefined {
+  if (text === undefined) return undefined;
+  return typeof text === 'function' ? text(state) : text;
+}
+
 export type ScriptCommand =
   /** Show a line of dialogue. `as` labels the speaker in a name plate. */
-  | { say: string; as?: string }
+  | { say: Text; as?: Text }
   /** Branch on a player choice; `branch[i]` runs for `choice[i]`. */
   | { choice: string[]; branch: Script[] }
   | { setFlag: string }
@@ -16,8 +30,10 @@ export type ScriptCommand =
   | { ifFlag: string; then: Script; otherwise?: Script }
   /** Same, but keyed off arbitrary state (battle won, puzzle solved, ...). */
   | { ifState: (state: GameState) => boolean; then: Script; otherwise?: Script }
-  /** Hand control to the battle scene; the script resumes when it ends. */
+  /** Hand control to the battle scene against Arpit; resumes when it ends. */
   | { battle: true }
+  /** Same, but against the rival matched to the player's starter. */
+  | { rivalBattle: true }
   /** Hand control to the DOM application form; the script resumes on submit. */
   | { registry: true }
   /** Ask the player to type a nickname; the script resumes once they confirm. */
@@ -33,6 +49,7 @@ export interface ScriptContext {
   renderer: Renderer;
   state: GameState;
   startBattle(): void;
+  startRivalBattle(): void;
   openRegistry(): void;
   askName(): void;
   track(event: string, data?: Record<string, unknown>): void;
@@ -108,7 +125,9 @@ export class ScriptRunner {
     const { ctx } = this;
 
     if ('say' in cmd) {
-      ctx.textbox.show(format(cmd.say, ctx.state.playerName), ctx.renderer, cmd.as);
+      const body = format(resolve(cmd.say, ctx.state) ?? '', ctx.state.playerName);
+      const speaker = resolve(cmd.as, ctx.state);
+      ctx.textbox.show(body, ctx.renderer, speaker);
       this.mode = 'text';
       return;
     }
@@ -136,6 +155,12 @@ export class ScriptRunner {
       this.mode = 'suspended';
       ctx.textbox.hide();
       ctx.startBattle();
+      return;
+    }
+    if ('rivalBattle' in cmd) {
+      this.mode = 'suspended';
+      ctx.textbox.hide();
+      ctx.startRivalBattle();
       return;
     }
     if ('registry' in cmd) {

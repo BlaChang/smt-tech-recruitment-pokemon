@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { gymMap, PANEL_ORIGIN, PANEL_SIZE, PANEL_SPACING, PLAYER_SPAWN } from '../world/maps/gym';
+import { RIVALS, rivalFor, rivalTeam } from '../battle/rivals';
+import { STARTERS, TYPE_BEATS, typeMultiplier } from '../battle/teams';
 import { ROOMS, WARPS, roomAt } from '../world/maps/rooms';
 import { NPCS } from '../content/npcs';
 import { panelCellAt } from '../world/overworld';
-import { boulderSockets, boulderStarts, gatePositions, initialGates } from '../world/puzzleSetup';
-import { armTiles } from '../puzzle/gates';
 import { tileDef } from '../world/tilemap';
 
 const solid = (x: number, y: number) => gymMap.isSolid(x, y);
@@ -52,6 +52,10 @@ describe('rooms', () => {
     }
   });
 
+  it('chains the five rooms in the designed order', () => {
+    expect(ROOMS.map((r) => r.id)).toEqual(['entry', 'panels', 'hall', 'rival', 'arena']);
+  });
+
   it('cuts the arena corners so it reads as an octagon', () => {
     const arena = ROOMS.find((r) => r.id === 'arena');
     expect(arena).toBeDefined();
@@ -80,9 +84,8 @@ describe('warps', () => {
 
   it('links the five rooms in a chain, each onward door locked but the way back open', () => {
     const forward = WARPS.filter((w) => w.requires);
-    // Panels and crates are flag-locked; the gate room is locked by its own geometry.
     expect(new Set(forward.map((w) => w.requires))).toEqual(
-      new Set(['puzzle:panels', 'puzzle:boulders']),
+      new Set(['puzzle:panels', 'rival:beaten']),
     );
     for (const warp of WARPS.filter((w) => w.facing === 'down')) {
       expect(warp.requires, 'backtracking should never be locked').toBeUndefined();
@@ -91,8 +94,9 @@ describe('warps', () => {
 });
 
 describe('puzzle placement', () => {
-  it('puts four light panels in a 2x2, each reachable without crossing another', () => {
+  it('puts nine light panels in a 3x3, each reachable without crossing another', () => {
     const panels = gymMap.findAll('b');
+    expect(PANEL_SIZE).toBe(3);
     expect(panels).toHaveLength(PANEL_SIZE * PANEL_SIZE);
     for (const p of panels) expect(panelCellAt(p.x, p.y)).not.toBeNull();
     // Spacing of two means a walkway separates neighbouring panels.
@@ -100,38 +104,39 @@ describe('puzzle placement', () => {
     expect(panelCellAt(PANEL_ORIGIN.x, PANEL_ORIGIN.y)).toBe(0);
     expect(panelCellAt(PANEL_ORIGIN.x + 1, PANEL_ORIGIN.y)).toBeNull();
   });
+});
 
-  it('gives every crate a socket and open ground to start on', () => {
-    const starts = boulderStarts();
-    const sockets = boulderSockets();
-    expect(starts.length).toBeGreaterThan(0);
-    expect(starts).toHaveLength(sockets.length);
-    for (const s of [...starts, ...sockets]) expect(solid(s.x, s.y)).toBe(false);
-  });
-
-  it('starts every gate lying across its gap, fully blocking it', () => {
-    const hubs = gatePositions();
-    const gates = initialGates();
-    expect(hubs.length).toBeGreaterThan(0);
-    expect(gates).toHaveLength(hubs.length);
-
-    for (const hub of hubs) {
-      const gate = { ...hub, arms: gates.find((g) => g.id === hub.id)?.arms ?? [] };
-      expect(gate.arms).toEqual(['left', 'right']);
-      // The arms occupy open floor, and the squares beyond them are wall,
-      // so the gate seals the corridor until it is turned.
-      for (const arm of armTiles(gate)) {
-        expect(solid(arm.x, arm.y), `arm at ${arm.x},${arm.y} starts inside a wall`).toBe(false);
-      }
-      expect(solid(hub.x - 2, hub.y), 'gap should be exactly one gate wide').toBe(true);
-      expect(solid(hub.x + 2, hub.y), 'gap should be exactly one gate wide').toBe(true);
+describe('rivals', () => {
+  it('gives every starter a rival', () => {
+    for (const starter of STARTERS) {
+      expect(RIVALS[starter.id], `${starter.id} has no rival`).toBeDefined();
     }
   });
 
-  it('leaves room above and below each gate for it to swing into', () => {
-    for (const hub of gatePositions()) {
-      expect(solid(hub.x, hub.y - 1), `gate ${hub.id} cannot swing up`).toBe(false);
-      expect(solid(hub.x, hub.y + 1), `gate ${hub.id} cannot swing down`).toBe(false);
+  it('always sends a rival whose type beats the player', () => {
+    // The pairing is the point: whichever starter you take, the first real
+    // fight is uphill by the same margin.
+    for (const starter of STARTERS) {
+      const rival = rivalFor(starter.id);
+      const mon = rivalTeam(rival)[0];
+      expect(TYPE_BEATS[mon.type], `${rival.name} should counter ${starter.name}`).toBe(starter.type);
+      expect(typeMultiplier(mon.type, starter.type)).toBeGreaterThan(1);
+      expect(typeMultiplier(starter.type, mon.type)).toBeLessThan(1);
+    }
+  });
+
+  it('never has a rival field the starter you are holding', () => {
+    for (const starter of STARTERS) {
+      expect(rivalFor(starter.id).monId).not.toBe(starter.id);
+    }
+  });
+
+  it('handicaps rival mons below the starter they copy', () => {
+    for (const starter of STARTERS) {
+      const mon = rivalTeam(rivalFor(starter.id))[0];
+      const original = STARTERS.find((s) => s.id === mon.id);
+      expect(mon.maxHp).toBeLessThan(original?.maxHp ?? 0);
+      expect(mon.attack).toBeLessThanOrEqual(original?.attack ?? 0);
     }
   });
 });
@@ -147,11 +152,7 @@ describe('inhabitants', () => {
   it('never stacks two NPCs, or an NPC on a puzzle square', () => {
     const seen = new Set(NPCS.map((n) => `${n.x},${n.y}`));
     expect(seen.size).toBe(NPCS.length);
-    const puzzleSquares = new Set(
-      [...gymMap.findAll('b'), ...boulderStarts(), ...boulderSockets(), ...gatePositions()].map(
-        (p) => `${p.x},${p.y}`,
-      ),
-    );
+    const puzzleSquares = new Set(gymMap.findAll('b').map((p) => `${p.x},${p.y}`));
     for (const npc of NPCS) expect(puzzleSquares.has(`${npc.x},${npc.y}`)).toBe(false);
   });
 

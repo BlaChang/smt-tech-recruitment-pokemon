@@ -47,18 +47,32 @@ whichever room you are standing in, so you never see the void between them.
 
 | Room | What happens |
 | --- | --- |
-| Entrance hall | Five NPCs, one idea about SMT each |
-| Panel room | 2x2 Lights Out on floor buttons; the door north stays shut until all four are lit |
-| Crate room | Push two crates into their sockets |
-| Gate room | Three rotating gates, Fortree-style: walk into an arm to spin it |
+| Entrance hall | NPCs, one idea about SMT each |
+| Panel room | 3x3 Lights Out on floor buttons; the door north stays shut until all nine are lit |
+| Hall of Fame | Plaques recording what SMT tech has shipped |
+| Rival room | Your rival, chosen by your starter; the door north stays shut until you win |
 | Arena | Arpit Ransaria |
 
 Rooms are authored as blocks of text in `src/world/maps/rooms.ts` and stamped
 into one grid at load. Corners use `{}[]` for the 45-degree cuts that make
 rooms octagonal; the arena is cut two tiles deep on every corner.
 
-Each puzzle is a standalone module with its own tests: `src/puzzle/lightsOut.ts`,
-`boulders.ts`, `gates.ts`.
+## Types
+
+PW beats TD beats TECH beats PW. Professor SymmeTREE explains it in the
+intro, over a diagram generated from `TYPE_BEATS` itself so the picture
+cannot drift from the damage calculation.
+
+Super-effective is 1.4x and resisted is 0.714x, gentler than the games'
+2x/0.5x. Every rival is matched to counter your starter, so the multiplier
+always runs against you in that fight; at 2x it decided the battle before
+skill entered into it.
+
+| Your starter | Rival | They field |
+| --- | --- | --- |
+| Francis (TECH) | Calista | Goose (TD) |
+| Goose (TD) | Ritwin | BlobHeart (PW) |
+| BlobHeart (PW) | Blake | Francis (TECH) |
 
 Dialogue is **data, not code** — a small interpreter runs arrays of commands
 (`say`, `choice`, `ifFlag`, `battle`, `askName`, `registry`), so rewriting the

@@ -1,7 +1,15 @@
 import { openRegistry } from '../app/registry';
 import type { Telemetry } from '../app/telemetry';
-import { BattleScene } from '../battle/battleScene';
-import { EXIT_PROMPT, GATE_OPENS, SIGN_PLAQUE, SIGN_RULES } from '../content/dialogue';
+import { BattleScene, type Opponent } from '../battle/battleScene';
+import { rivalFor, rivalTeam } from '../battle/rivals';
+import {
+  EXIT_PROMPT,
+  GATE_OPENS,
+  HALL_PLAQUES,
+  HALL_SIGNS,
+  SIGN_PLAQUE,
+  SIGN_RULES,
+} from '../content/dialogue';
 import { NPCS } from '../content/npcs';
 import { ScriptRunner, type Script } from '../content/script';
 import { assets } from '../engine/assets';
@@ -10,8 +18,6 @@ import { TILE, VIEW_H, VIEW_W } from '../engine/config';
 import type { Input } from '../engine/input';
 import { clamp, type Renderer } from '../engine/renderer';
 import type { Scene, SceneStack } from '../engine/scenes';
-import * as Boulders from '../puzzle/boulders';
-import * as Gates from '../puzzle/gates';
 import { isSolved as panelsSolved, press as pressPanel, SIZE as PANEL_SIZE } from '../puzzle/lightsOut';
 import { save } from '../state/save';
 import { hasFlag, setFlag, type GameState } from '../state/gameState';
@@ -24,7 +30,6 @@ import { drawCharacter } from './characterSprite';
 import { drawFacingPip, Npc } from './npc';
 import { Player } from './player';
 import { atlasCell, quadName, tileDef } from './tilemap';
-import { boulderSockets, gatePositions } from './puzzleSetup';
 
 /** Frames to darken, to sit black, and to come back. */
 const FADE_FRAMES = 12;
@@ -60,9 +65,6 @@ export class Overworld implements Scene {
   /** Doorway fade: null when the player has control. */
   private transition: Transition | null = null;
 
-  private readonly sockets = boulderSockets();
-  private readonly gateHubs = gatePositions();
-
   constructor(private deps: OverworldDeps) {
     const { state } = deps;
     this.player = new Player(state.playerX, state.playerY, state.facing);
@@ -72,31 +74,12 @@ export class Overworld implements Scene {
       renderer: deps.renderer,
       state,
       startBattle: () => this.startBattle(),
+      startRivalBattle: () => this.startRivalBattle(),
       openRegistry: () => this.openRegistry(),
       // The nickname is taken in the professor's intro, never inside the gym.
       askName: () => this.runner.resume(),
       track: (event, data) => deps.telemetry.track(event, data),
     });
-  }
-
-  // ---------------------------------------------------------------- state
-
-  private get boulderState(): Boulders.BoulderState {
-    return { boulders: this.deps.state.boulders, sockets: this.sockets };
-  }
-
-  /** Gate hubs are fixed by the map; only their arm directions are saved. */
-  private get gates(): Gates.Gate[] {
-    return this.gateHubs.map((hub) => ({
-      id: hub.id,
-      x: hub.x,
-      y: hub.y,
-      arms: this.deps.state.gates.find((g) => g.id === hub.id)?.arms ?? [],
-    }));
-  }
-
-  private commitGates(gates: Gates.Gate[]): void {
-    this.deps.state.gates = gates.map((g) => ({ id: g.id, arms: g.arms }));
   }
 
   // ---------------------------------------------------------------- update
@@ -124,49 +107,12 @@ export class Overworld implements Scene {
       if (this.interact()) return;
     }
 
-    const before = { x: this.player.tileX, y: this.player.tileY };
-    const stepped = this.player.update(input, (x, y) => this.tryEnter(x, y, before));
+    const stepped = this.player.update(input, (x, y) => this.tryEnter(x, y));
     if (stepped) this.onStep(stepped.x, stepped.y);
   }
 
-  /**
-   * Walkability, plus the side effects of walking into something: shoving a
-   * crate, or spinning a gate. Called by the player controller before it
-   * commits to a step, with `from` being the square it is leaving.
-   */
-  private tryEnter(x: number, y: number, from: { x: number; y: number }): boolean {
-    const facing = directionBetween(from, { x, y });
-
-    // A crate moves if there is room beyond it; you then take its square.
-    if (Boulders.boulderAt(this.boulderState, x, y)) {
-      if (!facing) return false;
-      const moved = Boulders.push(this.boulderState, x, y, facing, (bx, by) => this.isOpenGround(bx, by));
-      if (!moved) {
-        audio.play('bump');
-        return false;
-      }
-      audio.play('crate');
-      this.deps.state.boulderPushes++;
-      this.checkBoulders();
-      return true;
-    }
-
-    // Walking into a gate arm turns the gate and lets you through.
-    const gates = this.gates;
-    if (Gates.gatesBlocking(gates, x, y)) {
-      if (!facing) return false;
-      if (Gates.hubAt(gates, x, y)) return false; // the hub itself never gives
-      const result = Gates.pushArm(gates, x, y, facing, (gx, gy) => !this.isOpenGround(gx, gy));
-      if (!result.advance) {
-        audio.play('bump');
-        return false;
-      }
-      audio.play('gate');
-      this.commitGates(gates);
-      this.deps.state.gateTurns++;
-      return true;
-    }
-
+  /** Walkability. Doors are walked onto and then warp. */
+  private tryEnter(x: number, y: number): boolean {
     return this.isWalkable(x, y);
   }
 
@@ -178,9 +124,7 @@ export class Overworld implements Scene {
 
   private isWalkable(x: number, y: number): boolean {
     if (gymMap.at(x, y) === 'D') return true; // doors are walked onto, then warp
-    if (!this.isOpenGround(x, y)) return false;
-    if (Boulders.boulderAt(this.boulderState, x, y)) return false;
-    return !Gates.gatesBlocking(this.gates, x, y);
+    return this.isOpenGround(x, y);
   }
 
   private onStep(x: number, y: number): void {
@@ -192,17 +136,6 @@ export class Overworld implements Scene {
       return;
     }
     this.justWarped = false;
-
-    // Reaching the far side of the gate room is the gate puzzle's win test:
-    // the geometry is the lock, so there is nothing else to check.
-    const room = roomAt(x, y);
-    if (room?.id === 'gates' && y <= room.y + 2 && !hasFlag(this.deps.state, 'puzzle:gates')) {
-      setFlag(this.deps.state, 'puzzle:gates');
-      this.deps.telemetry.track('puzzle:gates', { turns: this.deps.state.gateTurns });
-      audio.play('solved');
-      this.runner.start(GATE_OPENS);
-    }
-
     this.persist();
   }
 
@@ -223,16 +156,6 @@ export class Overworld implements Scene {
       audio.play('solved');
       this.runner.start(GATE_OPENS);
     }
-  }
-
-  private checkBoulders(): void {
-    const { state } = this.deps;
-    if (hasFlag(state, 'puzzle:boulders')) return;
-    if (!Boulders.isSolved(this.boulderState)) return;
-    setFlag(state, 'puzzle:boulders');
-    this.deps.telemetry.track('puzzle:boulders', { pushes: state.boulderPushes });
-    audio.play('solved');
-    this.runner.start(GATE_OPENS);
   }
 
   // ---------------------------------------------------------------- warps
@@ -319,6 +242,16 @@ export class Overworld implements Scene {
 
   private scriptForTile(x: number, y: number): Script | null {
     const tile = gymMap.at(x, y);
+    const room = roomAt(x, y);
+
+    // In the Hall of Fame every console and plaque reads differently, indexed
+    // left to right along the wall.
+    if (room?.id === 'hall' && (tile === 'C' || tile === 'S')) {
+      const list = tile === 'C' ? HALL_PLAQUES : HALL_SIGNS;
+      const index = Math.floor((x - room.x - 2) / 2);
+      return list[Math.max(0, Math.min(list.length - 1, index))];
+    }
+
     if (tile === 'S') return SIGN_PLAQUE;
     if (tile === 'C') return SIGN_RULES;
     if (tile === 'D') {
@@ -326,18 +259,40 @@ export class Overworld implements Scene {
       if (warp?.requires && !hasFlag(this.deps.state, warp.requires)) return lockedScript(warp);
       return null;
     }
-    const room = roomAt(x, y);
     if (!room && this.player.tileY >= gymMap.height - 4) return EXIT_PROMPT;
     return null;
   }
 
   private startBattle(): void {
+    this.pushBattle();
+  }
+
+  /** The rival fight: one mon each, and the type triangle against you. */
+  private startRivalBattle(): void {
+    const rival = rivalFor(this.deps.state.starter);
+    this.pushBattle(
+      { name: rival.name, team: rivalTeam(rival) },
+      (won) => {
+        if (!won) return;
+        setFlag(this.deps.state, 'rival:beaten');
+        this.deps.state.rivalTurns = this.deps.state.battleTurns;
+        this.deps.telemetry.track('rival:beaten', {
+          rival: rival.id,
+          turns: this.deps.state.battleTurns,
+        });
+      },
+    );
+  }
+
+  private pushBattle(opponent?: Opponent, onResult?: (won: boolean) => void): void {
     this.deps.stack.push(
       new BattleScene({
         renderer: this.deps.renderer,
         state: this.deps.state,
+        opponent,
         track: (event, data) => this.deps.telemetry.track(event, data),
-        onEnd: () => {
+        onEnd: (won) => {
+          onResult?.(won);
           this.deps.stack.pop();
           this.persist();
           this.runner.resume();
@@ -377,17 +332,12 @@ export class Overworld implements Scene {
 
     // Depth sort so anything lower on the screen draws in front.
     const entities: Array<{ y: number; draw: () => void }> = [
-      ...this.npcs.map((npc) => ({ y: npc.y * TILE, draw: () => npc.render(r) })),
-      ...this.deps.state.boulders.map((b) => ({
-        y: b.y * TILE,
-        draw: () => this.drawTileArt(r, Boulders.isSocket(this.boulderState, b.x, b.y) ? 'socketFilled' : 'boulder', b.x, b.y),
-      })),
+      ...this.npcs.map((npc) => ({ y: npc.y * TILE, draw: () => npc.render(r, this.deps.state) })),
       { y: this.player.pixelY, draw: () => this.renderPlayer(r) },
     ];
     entities.sort((a, b) => a.y - b.y);
     for (const entity of entities) entity.draw();
 
-    this.renderGates(r);
     this.runner.render();
 
     const fade = this.fadeAmount;
@@ -444,8 +394,6 @@ export class Overworld implements Scene {
           const cell = panelCellAt(x, y);
           name = cell !== null && this.deps.state.panels[cell] ? 'buttonOn' : 'buttonOff';
         }
-        if (char === 'o' && Boulders.boulderAt(this.boulderState, x, y)) continue; // crate covers it
-
         if (!this.drawTileArt(r, name, x, y)) {
           // Placeholder path, used until the atlas image loads.
           r.rect(x * TILE, y * TILE, TILE, TILE, def.color);
@@ -464,16 +412,6 @@ export class Overworld implements Scene {
     return true;
   }
 
-  private renderGates(r: Renderer): void {
-    for (const gate of this.gates) {
-      this.drawTileArt(r, 'gateHub', gate.x, gate.y);
-      for (const arm of Gates.armTiles(gate)) {
-        const horizontal = arm.dir === 'left' || arm.dir === 'right';
-        this.drawTileArt(r, horizontal ? 'gateArmH' : 'gateArmV', arm.x, arm.y);
-      }
-    }
-  }
-
   private renderPlayer(r: Renderer): void {
     const px = this.player.pixelX;
     const py = this.player.pixelY;
@@ -486,18 +424,6 @@ export class Overworld implements Scene {
     drawFacingPip(r, px, py + bob, this.player.facing);
   }
 
-}
-
-/** Direction from one adjacent tile to another, or null if they are not adjacent. */
-function directionBetween(
-  from: { x: number; y: number },
-  to: { x: number; y: number },
-): Direction | null {
-  if (to.x === from.x && to.y === from.y - 1) return 'up';
-  if (to.x === from.x && to.y === from.y + 1) return 'down';
-  if (to.x === from.x - 1 && to.y === from.y) return 'left';
-  if (to.x === from.x + 1 && to.y === from.y) return 'right';
-  return null;
 }
 
 function opposite(dir: Direction): Direction {

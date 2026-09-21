@@ -34,6 +34,17 @@ export class Renderer {
     this.camY = Math.round(clamp(y - VIEW_H / 2, 0, Math.max(0, mapH - VIEW_H)));
   }
 
+  /** A one-pixel line, for diagrams. Screen space only. */
+  line(x1: number, y1: number, x2: number, y2: number, color: string): void {
+    this.ctx.strokeStyle = color;
+    this.ctx.lineWidth = 1;
+    this.ctx.beginPath();
+    // Half-pixel offsets keep a 1px stroke on the pixel grid.
+    this.ctx.moveTo(Math.round(x1) + 0.5, Math.round(y1) + 0.5);
+    this.ctx.lineTo(Math.round(x2) + 0.5, Math.round(y2) + 0.5);
+    this.ctx.stroke();
+  }
+
   clear(color = '#000'): void {
     this.ctx.fillStyle = color;
     this.ctx.fillRect(0, 0, VIEW_W, VIEW_H);

@@ -11,9 +11,8 @@ import { gymMap, PLAYER_SPAWN } from '../world/maps/gym';
 import { ROOMS, roomAt, WARPS } from '../world/maps/rooms';
 import { NPCS } from '../content/npcs';
 import { STARTERS } from '../battle/teams';
+import { rivalFor } from '../battle/rivals';
 import { solve } from '../puzzle/lightsOut';
-import { boulderSockets, gatePositions } from '../world/puzzleSetup';
-import { armTiles } from '../puzzle/gates';
 import { panelCellAt } from '../world/overworld';
 import type { Button, Input } from '../engine/input';
 import type { Renderer } from '../engine/renderer';
@@ -74,12 +73,6 @@ function fakeRenderer(): Renderer {
   } as unknown as Renderer;
 }
 
-const DELTA: Record<Direction, { dx: number; dy: number }> = {
-  up: { dx: 0, dy: -1 },
-  down: { dx: 0, dy: 1 },
-  left: { dx: -1, dy: 0 },
-  right: { dx: 1, dy: 0 },
-};
 
 function setup() {
   const state = createGameState();
@@ -143,17 +136,7 @@ function setup() {
   };
 
   /** Everything the player cannot walk through right now. */
-  const blockers = (): Set<string> => {
-    const out = new Set<string>();
-    for (const n of NPCS) out.add(`${n.x},${n.y}`);
-    for (const b of state.boulders) out.add(`${b.x},${b.y}`);
-    for (const hub of gatePositions()) {
-      const arms = state.gates.find((g) => g.id === hub.id)?.arms ?? [];
-      out.add(`${hub.x},${hub.y}`);
-      for (const a of armTiles({ ...hub, arms })) out.add(`${a.x},${a.y}`);
-    }
-    return out;
-  };
+  const blockers = (): Set<string> => new Set(NPCS.map((n) => `${n.x},${n.y}`));
 
   /** BFS that stays inside rooms and never steps onto a door by accident. */
   const path = (tx: number, ty: number, avoid = new Set<string>()): Array<[number, number]> | null => {
@@ -250,19 +233,9 @@ function setup() {
     expect(roomAt(player().tileX, player().tileY)?.id, 'the door did not lead anywhere').not.toBe(from);
   };
 
-  /** Shoves a crate one square by walking into it. */
-  const pushCrate = (index: number, dir: Direction): void => {
-    const crate = state.boulders[index];
-    const { dx, dy } = DELTA[dir];
-    walkTo(crate.x - dx, crate.y - dy);
-    const before = { ...crate };
-    expect(step(dir), `crate ${index} would not budge ${dir}`).toBe(true);
-    expect(state.boulders[index]).not.toEqual(before);
-  };
-
   return {
     state, stack, input, overlay, tick, tap, walkTo, faceAndTalk, clearDialogue,
-    running, player, startIntro, enterGym, useDoor, pushCrate, step,
+    running, player, startIntro, enterGym, useDoor, step,
   };
 }
 
@@ -359,7 +332,7 @@ describe('doorway transition', () => {
 });
 
 describe('full playthrough', () => {
-  it('goes lab -> hall -> panels -> crates -> gates -> arena -> application', async () => {
+  it('goes lab -> hall -> panels -> fame -> rival -> arena -> application', async () => {
     const h = setup();
 
     // 1. Professor SymmeTREE: nickname, then a starter.
@@ -403,46 +376,36 @@ describe('full playthrough', () => {
     }
     expect(h.state.flags.has('puzzle:panels'), 'the panels never all lit').toBe(true);
 
-    // 4. Crate room: shove both crates into their sockets.
+    // 4. Hall of Fame: every plaque along the walls reads.
     h.useDoor(...doorOut('panels'));
-    expect(roomAt(h.player().tileX, h.player().tileY)?.id).toBe('boulders');
+    expect(roomAt(h.player().tileX, h.player().tileY)?.id).toBe('hall');
 
-    const sockets = boulderSockets();
-    for (let i = 0; i < h.state.boulders.length; i++) {
-      const target = sockets[i];
-      let guard = 0;
-      while ((h.state.boulders[i].x !== target.x || h.state.boulders[i].y !== target.y) && guard++ < 20) {
-        const crate = h.state.boulders[i];
-        // Line the crate up horizontally first, then drive it home vertically.
-        const dir: Direction =
-          crate.x !== target.x ? (target.x > crate.x ? 'right' : 'left')
-          : target.y > crate.y ? 'down' : 'up';
-        h.pushCrate(i, dir);
-        h.clearDialogue();
-      }
-      expect(h.state.boulders[i], `crate ${i} never reached its socket`).toEqual({ x: target.x, y: target.y });
-    }
-    expect(h.state.flags.has('puzzle:boulders'), 'the crates never registered').toBe(true);
-
-    // 5. Gate room: spin each gate upright and walk through.
-    h.useDoor(...doorOut('boulders'));
-    expect(roomAt(h.player().tileX, h.player().tileY)?.id).toBe('gates');
-
-    const hubs = [...gatePositions()].sort((a, b) => b.y - a.y); // nearest first
-    for (const hub of hubs) {
-      h.walkTo(hub.x - 1, hub.y + 1);
-      expect(h.step('up'), `gate ${hub.id} would not turn`).toBe(true);
+    const hall = ROOMS.find((r) => r.id === 'hall');
+    const plaques = gymMap.findAll('C').filter((t) => roomAt(t.x, t.y)?.id === 'hall');
+    expect(plaques.length, 'the hall should have plaques to read').toBeGreaterThan(3);
+    for (const plaque of plaques.slice(0, 3)) {
+      h.walkTo(plaque.x, plaque.y + 1);
+      h.faceAndTalk(plaque.x, plaque.y);
       h.clearDialogue();
-      const arms = h.state.gates.find((g) => g.id === hub.id)?.arms ?? [];
-      expect(new Set(arms), `gate ${hub.id} did not end up upright`).toEqual(new Set(['up', 'down']));
     }
-    // Turning the gates only opens the way; reaching the far side is the win.
-    const gateRoom = ROOMS.find((r) => r.id === 'gates');
-    h.walkTo((gateRoom?.x ?? 0) + 6, (gateRoom?.y ?? 0) + 1);
-    expect(h.state.flags.has('puzzle:gates'), 'never reached the top of the gate room').toBe(true);
+    expect(hall).toBeDefined();
+
+    // 5. Rival: the fight you are supposed to lose the type matchup.
+    h.useDoor(...doorOut('hall'));
+    expect(roomAt(h.player().tileX, h.player().tileY)?.id).toBe('rival');
+
+    const rival = rivalFor(h.state.starter);
+    const rivalNpc = NPCS.find((n) => n.id === 'rival');
+    h.walkTo(rivalNpc?.x ?? 0, (rivalNpc?.y ?? 0) + 1);
+    h.faceAndTalk(rivalNpc?.x ?? 0, rivalNpc?.y ?? 0);
+
+    let rivalGuard = 0;
+    while (!h.state.flags.has('rival:beaten') && rivalGuard++ < 6000) h.tap('a');
+    expect(h.state.flags.has('rival:beaten'), `never beat ${rival.name}`).toBe(true);
+    h.clearDialogue();
 
     // 6. Arena: Arpit, the battle, the shield question.
-    h.useDoor(...doorOut('gates'));
+    h.useDoor(...doorOut('rival'));
     expect(roomAt(h.player().tileX, h.player().tileY)?.id).toBe('arena');
 
     const leader = NPCS.find((n) => n.id === 'leader');
@@ -480,7 +443,7 @@ describe('full playthrough', () => {
 
     expect(h.state.applied, 'the application never went through').toBe(true);
     h.clearDialogue();
-    const saved = JSON.parse(localStorage.getItem('smt-tech-gym:save:v2') ?? '{}');
+    const saved = JSON.parse(localStorage.getItem('smt-tech-gym:save:v3') ?? '{}');
     expect(saved.applied).toBe(true);
     expect(saved.battleWon).toBe(true);
   }, 60000);

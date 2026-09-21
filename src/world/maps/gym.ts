@@ -39,25 +39,20 @@ function room(id: string): RoomDef {
 
 const ENTRY = room('entry');
 const PANELS = room('panels');
-const BOULDERS = room('boulders');
-const GATES = room('gates');
 const ARENA = room('arena');
 
 /** Just inside the entrance, facing into the gym. */
 export const PLAYER_SPAWN = { x: ENTRY.x + 7, y: ENTRY.y + 8, facing: 'up' as const };
 
 /**
- * 2x2 Lights Out. Panels sit two tiles apart so you can reach any one of them
+ * 3x3 Lights Out. Panels sit two tiles apart so you can reach any one of them
  * without crossing another, and off the doorway column so passing through the
  * room cannot solve it by accident.
  */
-export const PANEL_ORIGIN = { x: PANELS.x + 8, y: PANELS.y + 3 };
+export const PANEL_ORIGIN = { x: PANELS.x + 5, y: PANELS.y + 3 };
 export const PANEL_SPACING = 2;
-export const PANEL_SIZE = 2;
+export const PANEL_SIZE = 3;
 
-/** Where the crate puzzle's blocks and sockets start. */
-export const BOULDER_ROOM = BOULDERS;
-export const GATE_ROOM = GATES;
 export const ARENA_ROOM = ARENA;
 
 /** Tile the gym leader stands on. */

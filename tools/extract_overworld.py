@@ -56,7 +56,16 @@ ASSIGNMENTS = {
     'leader': 62,      # grey spiked hair, dark outfit -- Arpit
     'wacky': 73,       # big curly hair, bright dress -- the gremlin
     'hint': 22,        # purple hair -- the puzzler
+    # Rivals, one per starter. Emerald's overworld sprites share a single
+    # skin palette and no eyewear, so these are picked on hair and outfit --
+    # swap the index if you want someone different.
+    'rivalCalista': 63,  # dark bobbed hair
+    'rivalRitwin': 71,   # dark hair, plain shirt
+    'rivalBlake': 72,    # dark hair; glasses are added below
 }
+
+# Characters to draw glasses onto, since the rip has none.
+WEARS_GLASSES = {'rivalBlake'}
 
 
 def find_character_rows(im):
@@ -99,6 +108,43 @@ def cell(im, col, y):
     return im.crop((x, y, x + CELL_W, y + CELL_H))
 
 
+def add_glasses(Image, sheet, frame_w, frame_h):
+    """
+    Draws a pair of glasses over the eyes on every facing.
+
+    The rip has no eyewear at this size, so the frames are drawn from the
+    sprite's own eye pixels: find the dark dots on each frame and bridge
+    them. Up-facing frames show the back of the head and are skipped.
+    """
+    px = sheet.load()
+    for row in range(4):
+        if row == 1:  # facing away; no eyes to cover
+            continue
+        for col in range(3):
+            ox, oy = col * frame_w, row * frame_h
+            eyes = [
+                (x, y)
+                for y in range(6, frame_h // 2 + 4)
+                for x in range(2, frame_w - 2)
+                if px[ox + x, oy + y][3] == 255 and sum(px[ox + x, oy + y][:3]) < 200
+                and px[ox + x, oy + y - 1][3] == 255 and sum(px[ox + x, oy + y - 1][:3]) > 330
+            ]
+            if not eyes:
+                continue
+            eye_y = min(y for _, y in eyes)
+            band = [x for x, y in eyes if y == eye_y]
+            lo, hi = min(band), max(band)
+            ink = (40, 40, 56, 255)
+            for x in range(max(1, lo - 1), min(frame_w - 1, hi + 2)):
+                if px[ox + x, oy + eye_y][3]:
+                    px[ox + x, oy + eye_y] = ink
+            # A stem back towards the ear on each side.
+            for x in (max(1, lo - 2), min(frame_w - 2, hi + 2)):
+                if px[ox + x, oy + eye_y][3]:
+                    px[ox + x, oy + eye_y] = ink
+    return sheet
+
+
 def key_out(img):
     """Replace both background keys with transparency."""
     img = img.convert('RGBA')
@@ -133,6 +179,8 @@ def build(Image):
                 source = row if frames == 4 else row * 3 + col
                 frame = key_out(cell(im, source, y))
                 sheet.paste(frame, (col * CELL_W, row * CELL_H), frame)
+        if name in WEARS_GLASSES:
+            sheet = add_glasses(Image, sheet, CELL_W, CELL_H)
         sheet.save(os.path.join(OUT, f'{name}.png'))
         walkers.append(name) if frames == 12 else standers.append(name)
 

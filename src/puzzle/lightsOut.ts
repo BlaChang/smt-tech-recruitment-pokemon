@@ -1,5 +1,5 @@
-/** Board edge length. The gym uses 2; the solver works for any size. */
-export const SIZE = 2;
+/** Board edge length. The gym uses 3; the solver works for any size. */
+export const SIZE = 3;
 export const CELLS = SIZE * SIZE;
 
 export function index(col: number, row: number, size = SIZE): number {
