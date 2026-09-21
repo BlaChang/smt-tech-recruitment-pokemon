@@ -103,9 +103,32 @@ def shrink(Image, img, size):
     return out
 
 
+def already_conformant(img):
+    """
+    True when the source is already exactly what the game wants: the right
+    frame size, real transparency, and content resting on the bottom edge.
+
+    Hand-drawn art at target size is better left alone -- keying, rescaling
+    and re-hardening it can only lose pixels the artist placed deliberately.
+    """
+    if img.mode != 'RGBA' or img.size != (FRAME, FRAME):
+        return False
+    box = img.getbbox()
+    return box is not None and box[3] == FRAME
+
+
 def convert(Image, path, name):
     src = Image.open(path)
     original = src.size
+
+    if already_conformant(src):
+        src.save(os.path.join(OUT_DIR, f"{name}.png"))
+        box = src.getbbox()
+        print(
+            f'{name}: already {FRAME}x{FRAME} with its feet on the bottom edge; '
+            f'copied as-is ({box[2] - box[0]}x{box[3] - box[1]} of content)'
+        )
+        return
     img = key_out(src, background_colour(src.convert('RGB')))
 
     box = img.getbbox()

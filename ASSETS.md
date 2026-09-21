@@ -199,10 +199,17 @@ python3 tools/make_sprites.py --clean  # remove; game falls back to rectangles
 `make_sprites.py` skips any mon that has a file in `art-source/mons/`, so
 regenerating placeholders can never overwrite real art.
 
+Art already at 64x64 with real transparency and its content resting on the
+bottom edge is **copied through untouched** -- rescaling and re-hardening
+hand-made pixel art can only lose pixels that were placed deliberately.
+Anything else (a photo, an oversized drawing) is keyed, trimmed, fitted and
+bottom-aligned.
+
 | Mon | Art |
 | --- | --- |
-| blobheart | hand-drawn, `art-source/mons/blobheart.png` |
-| goose, francis, maytrix, tesselation | generated placeholder |
+| blobheart | photo, downscaled and keyed from `art-source/mons/blobheart.png` |
+| francis | pixel art at target size, used verbatim |
+| goose, maytrix, pieuler | generated placeholder |
 
 ## Formats
 
