@@ -56,6 +56,10 @@ ASSIGNMENTS = {
     'leader': 62,      # grey spiked hair, dark outfit -- Arpit
     'wacky': 73,       # big curly hair, bright dress -- the gremlin
     'hint': 22,        # purple hair -- the puzzler
+    # Hall of Fame attendants.
+    'curator': 67,     # grey-haired elder, has seen every tournament
+    'shipper': 42,     # dark hair, plain dark outfit -- reads on-call
+    'rookie': 65,      # red hair -- the recent joiner
     # Rivals, one per starter. Emerald's overworld sprites share a single
     # skin palette and no eyewear, so these are picked on hair and outfit --
     # swap the index if you want someone different.

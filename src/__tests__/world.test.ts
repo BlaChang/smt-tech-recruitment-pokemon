@@ -164,6 +164,54 @@ describe('inhabitants', () => {
   });
 });
 
+describe('people do not wall the gym off', () => {
+  /** Flood fill from a tile, treating both scenery and NPCs as solid. */
+  function reachable(from: { x: number; y: number }): Set<string> {
+    const blocked = new Set(NPCS.map((n) => `${n.x},${n.y}`));
+    const seen = new Set<string>();
+    const queue = [from];
+    while (queue.length) {
+      const { x, y } = queue.shift() as { x: number; y: number };
+      const key = `${x},${y}`;
+      if (seen.has(key) || gymMap.isSolid(x, y) || blocked.has(key)) continue;
+      seen.add(key);
+      queue.push({ x: x + 1, y }, { x: x - 1, y }, { x, y: y + 1 }, { x, y: y - 1 });
+    }
+    return seen;
+  }
+
+  it('leaves every door reachable from the one you came in by', () => {
+    // An NPC is solid. Stood in the wrong tile, one of them can seal a room
+    // and strand a candidate behind the hard gate with no way forward.
+    for (const warp of WARPS) {
+      const from = { x: warp.toX, y: warp.toY };
+      const room = roomAt(from.x, from.y);
+      const seen = reachable(from);
+      const doors = gymMap
+        .findAll('D')
+        .filter((d) => roomAt(d.x, d.y)?.id === room?.id);
+      for (const door of doors) {
+        expect(
+          seen.has(`${door.x},${door.y}`),
+          `landing in ${room?.id} at ${from.x},${from.y}, the door at ${door.x},${door.y} is walled off`,
+        ).toBe(true);
+      }
+    }
+  });
+
+  it('leaves room to stand in front of every hall display', () => {
+    // Reading a plaque means standing on the tile below it. An NPC parked
+    // there quietly deletes a project from the game.
+    const occupied = new Set(NPCS.map((n) => `${n.x},${n.y}`));
+    for (const tile of gymMap.findAll('C').filter((t) => roomAt(t.x, t.y)?.id === 'hall')) {
+      expect(
+        occupied.has(`${tile.x},${tile.y + 1}`),
+        `someone is standing in front of the display at ${tile.x},${tile.y}`,
+      ).toBe(false);
+    }
+  });
+});
+
 describe('hall of fame', () => {
   it('has exactly one display per project', () => {
     const hall = ROOMS.find((r) => r.id === 'hall');

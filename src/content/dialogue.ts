@@ -167,6 +167,91 @@ export const RIVAL_ENCOUNTER: Script = [
  * A project with a url also puts a clickable link under the screen; one
  * without simply does not mention it.
  */
+/**
+ * The Hall of Fame's three attendants.
+ *
+ * The plaques state what each project is; these three say what it was like
+ * to build one, which is the part a candidate cannot get from a repo. Each
+ * carries exactly one idea, same as the entrance hall crowd.
+ *
+ * NOTE FOR SMT: these are written to be replaced. Swap in a real story from
+ * a real tournament and this room does more recruiting than the rest of the
+ * gym put together. `PROJECTS[n].name` is interpolated so renaming a project
+ * in projects.ts cannot leave a curator talking about the old name.
+ */
+export const NPC_CURATOR: Script = [
+  { setFlag: 'talked:curator' },
+  { say: 'Six screens, {name}. Six things that did not exist until somebody on this team decided they should.', as: 'CURATOR' },
+  {
+    say: `Read them in any order. ${PROJECTS[0].name} is the oldest and ${PROJECTS[5].name} is the newest, and honestly the newest one is the better story.`,
+    as: 'CURATOR',
+  },
+  {
+    choice: ['Who decides what gets built?', 'Do people actually use these?'],
+    branch: [
+      [
+        { say: 'Whoever notices the problem. That is not a slogan, it is just how it keeps happening.', as: 'CURATOR' },
+        { say: 'Someone says "this is painful every year" and then it is their project. Sometimes they are a freshman.', as: 'CURATOR' },
+        { track: 'curator:who' },
+      ],
+      [
+        { say: 'Every one of them, on the same Saturday, by people who will never know your name.', as: 'CURATOR' },
+        { say: 'That is the trade. No applause, and the thing you built runs a tournament.', as: 'CURATOR' },
+        { track: 'curator:used' },
+      ],
+    ],
+  },
+];
+
+export const NPC_SHIPPER: Script = [
+  { setFlag: 'talked:shipper' },
+  {
+    say: `I own the ${PROJECTS[2].name}. Third screen along. Go look at it, I will wait.`,
+    as: 'ON CALL',
+  },
+  {
+    say: 'It broke. Live. Forty minutes before awards, with the room watching it.',
+    as: 'ON CALL',
+  },
+  {
+    choice: ['What did you do?', 'Whose fault was it?'],
+    branch: [
+      [
+        { say: 'Found it, fixed it, pushed it, and went back to handing out water bottles.', as: 'ON CALL' },
+        { say: 'Nobody in that room knows it happened. That is the whole job, really.', as: 'ON CALL' },
+        { track: 'shipper:fix' },
+      ],
+      [
+        { say: 'Mine. Obviously mine. I wrote it.', as: 'ON CALL' },
+        { say: 'We do not do blame here, we do postmortems. Then we fix it so next year it cannot happen.', as: 'ON CALL' },
+        { track: 'shipper:blame' },
+      ],
+    ],
+  },
+];
+
+export const NPC_ROOKIE: Script = [
+  { setFlag: 'talked:rookie' },
+  { say: 'Do not let this room intimidate you. I stood exactly where you are and I could not read half of it.', as: 'FIRST YEAR' },
+  {
+    say: `I joined last year knowing nothing. My name is on ${PROJECTS[3].name} now. Fourth screen.`,
+    as: 'FIRST YEAR',
+  },
+  {
+    choice: ['How long did that take?', 'What did you already know?'],
+    branch: [
+      [
+        { say: 'One tournament cycle. You learn fast when there is a real date at the end of it.', as: 'FIRST YEAR' },
+        { track: 'rookie:time' },
+      ],
+      [
+        { say: 'Almost nothing. I liked the puzzle and I kept showing up. That turned out to be the requirement.', as: 'FIRST YEAR' },
+        { track: 'rookie:skills' },
+      ],
+    ],
+  },
+];
+
 export const HALL_PLAQUES: Script[] = PROJECTS.map((project) => [
   { run: () => showProjectLink(project.name, project.url) },
   { say: `${project.name}\n${project.blurb}` },
