@@ -60,6 +60,12 @@ export interface MonSpec {
  *
  * Arpit is the harder of the two, which is the point. Re-run
  * src/__tests__/balance.test.ts after touching any of these numbers.
+ *
+ * Move ORDER matters as much as the stats: the battle cursor starts on slot
+ * 0, so that move is what a player who only ever presses A will use for the
+ * whole fight. Leading with a weak attack turns the laziest path into a
+ * near-certain loss, and the gym is hard-gated. Slot 0 is the strongest
+ * attack; the `move order` tests in balance.test.ts hold the line.
  */
 export const STARTERS: MonSpec[] = [
   {
@@ -69,7 +75,7 @@ export const STARTERS: MonSpec[] = [
     maxHp: 202,
     attack: 13,
     defense: 12,
-    moves: ['proposal', 'hardGeo', 'rubberDuck', 'rollback'],
+    moves: ['hardGeo', 'proposal', 'rubberDuck', 'rollback'],
     color: '#c1553f',
     blurb: 'A red panda who writes problems. Sweet-natured, until you ask for an easy one.',
     sendLine: 'BLOBHEART uncurls and looks mildly disappointed in you.',
@@ -93,7 +99,7 @@ export const STARTERS: MonSpec[] = [
     maxHp: 176,
     attack: 16,
     defense: 12,
-    moves: ['mergeConflict', 'pushToMain', 'refactor', 'hotfix'],
+    moves: ['pushToMain', 'mergeConflict', 'refactor', 'hotfix'],
     color: '#3f9e6a',
     blurb: 'A penguin who ships code. Has strong opinions about the scoreboard and will share them.',
     sendLine: 'FRANCIS waddles in and immediately opens a terminal.',

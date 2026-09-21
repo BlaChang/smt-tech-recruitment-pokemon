@@ -12,6 +12,8 @@ import { rivalFor, rivalTeam } from '../battle/rivals';
 const RUNS = 400;
 
 type Policy =
+  /** Never moves the cursor: uses slot 0, every turn, all fight. */
+  | 'mashing'
   /** Attacks every single turn and never touches the heal. */
   | 'never-heal'
   /** Attacks, but heals when badly hurt. The intended way to play. */
@@ -21,6 +23,7 @@ type Policy =
 
 function chooseMove(mon: ReturnType<typeof createMon>, policy: Policy): string {
   const ids = mon.spec.moves;
+  if (policy === 'mashing') return ids[0];
   if (policy === 'flailing') return ids[Math.floor(Math.random() * ids.length)];
 
   const heal = ids.find((id) => move(id).effect === 'heal');
@@ -111,6 +114,24 @@ describe('the rival fight', () => {
   });
 });
 
+describe('move order', () => {
+  it('leads every starter with its strongest attack', () => {
+    // Slot 0 is the default cursor position. Anything weaker there is a trap
+    // for the laziest way to play, which is the way most people will play.
+    for (const starter of STARTERS) {
+      const powers = starter.moves.map((id) => move(id).power);
+      expect(powers[0], `${starter.name} leads with a weaker move`).toBe(Math.max(...powers));
+    }
+  });
+
+  it('never leads with a move that deals no damage', () => {
+    for (const starter of STARTERS) {
+      expect(move(starter.moves[0]).power, `${starter.name} leads with a status move`)
+        .toBeGreaterThan(0);
+    }
+  });
+});
+
 describe('gym difficulty', () => {
   it('is nearly certain for a challenger who attacks and heals', () => {
     for (const starter of STARTERS) {
@@ -154,6 +175,17 @@ describe('gym difficulty', () => {
     const arpit = STARTERS.map((s) => winRate(s.id, 'never-heal', 0, 'arpit'));
     const avg = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
     expect(avg(arpit)).toBeLessThan(avg(rival) + 0.2);
+  });
+
+  it('gives a player who only ever presses A a real chance', () => {
+    // The cursor starts on slot 0, so slot 0 is what someone who never reads
+    // the menu uses for the entire fight. The gym is hard-gated: if that is
+    // a near-certain loss, the gate stops filtering for willingness and
+    // starts filtering for patience with a losing streak.
+    for (const starter of STARTERS) {
+      const rate = winRate(starter.id, 'mashing');
+      expect(rate, `${starter.name} mashing A vs Arpit: ${rate}`).toBeGreaterThan(0.3);
+    }
   });
 
   it('is still losable, so beating Arpit means something', () => {

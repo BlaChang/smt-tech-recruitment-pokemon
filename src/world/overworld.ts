@@ -273,8 +273,11 @@ export class Overworld implements Scene {
     return null;
   }
 
+  /** The leader. Winning here is the thing that unlocks the registry. */
   private startBattle(): void {
-    this.pushBattle();
+    this.pushBattle(undefined, (won) => {
+      if (won) this.deps.state.battleWon = true;
+    });
   }
 
   /** The rival fight: one mon each, and the type triangle against you. */

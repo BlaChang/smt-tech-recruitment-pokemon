@@ -392,7 +392,8 @@ export class BattleScene implements Scene {
 
   private finish(won: boolean): void {
     this.phase = 'done';
-    this.deps.state.battleWon = this.deps.state.battleWon || won;
+    // Which flag a win grants is the caller's business: this same scene runs
+    // the rival fight too, and `battleWon` means "beat the leader".
     this.deps.track(won ? 'battle:won' : 'battle:lost', {
       turns: this.deps.state.battleTurns,
       mathAttempts: this.deps.state.mathAttempts,

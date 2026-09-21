@@ -5,6 +5,8 @@ import { IntroScene } from '../ui/introScene';
 import { openNameEntry } from '../app/nameEntry';
 import { SceneStack } from '../engine/scenes';
 import { BattleScene } from '../battle/battleScene';
+import { move } from '../battle/moves';
+import { healsLeft, type MonState } from '../battle/engine';
 import { Telemetry } from '../app/telemetry';
 import { createGameState } from '../state/gameState';
 import { gymMap, PLAYER_SPAWN } from '../world/maps/gym';
@@ -435,6 +437,10 @@ describe('full playthrough', () => {
     let rivalGuard = 0;
     while (!h.state.flags.has('rival:beaten') && rivalGuard++ < 6000) h.tap('a');
     expect(h.state.flags.has('rival:beaten'), `never beat ${rival.name}`).toBe(true);
+    // The rival is not the leader. If beating them set `battleWon`, Arpit
+    // would greet you with his post-win speech and the loop below would
+    // pass without ever fighting him.
+    expect(h.state.battleWon, 'the rival should not count as beating Arpit').toBe(false);
     h.clearDialogue();
 
     // 6. Arena: Arpit, the battle, the shield question.
@@ -445,19 +451,45 @@ describe('full playthrough', () => {
     h.walkTo((leader?.x ?? 0), (leader?.y ?? 0) + 1);
     h.faceAndTalk(leader?.x ?? 0, leader?.y ?? 0);
 
+    // Plays Arpit the way the game intends: hit hardest, heal when hurt.
+    // This is a funnel test, not a difficulty test — how a careless player
+    // fares is `gym difficulty` in balance.test.ts, which simulates it
+    // thousands of times instead of once. Scripting one competent fight here
+    // keeps the run deterministic; the assertion above is what keeps it
+    // honest, since `battleWon` is false on entry.
     let guard = 0;
+    let fought = false;
     while (!h.state.battleWon && guard++ < 5000) {
       const battle = h.stack.top;
       if (battle instanceof BattleScene) {
-        const inner = battle as unknown as { phase: string; question: { answer: number } | null };
+        fought = true;
+        const inner = battle as unknown as {
+          phase: string;
+          question: { answer: number } | null;
+          moveIndex: number;
+          active: MonState;
+        };
         if (inner.phase === 'question' && inner.question) {
           for (let i = 0; i < inner.question.answer; i++) h.tap('down');
           h.tap('a');
           continue;
         }
+        if (inner.phase === 'menu') {
+          const moves = inner.active.spec.moves;
+          const heal = moves.findIndex((id) => move(id).effect === 'heal');
+          const hurt = inner.active.hp / inner.active.spec.maxHp < 0.4;
+          const best = moves.reduce(
+            (b, id, i) => (move(id).power > move(moves[b]).power ? i : b),
+            0,
+          );
+          // Set directly rather than walked: which key moves the cursor
+          // where is the menu's business, not this test's.
+          inner.moveIndex = hurt && heal >= 0 && healsLeft(inner.active) > 0 ? heal : best;
+        }
       }
       h.tap('a');
     }
+    expect(fought, 'Arpit never battled').toBe(true);
     expect(h.state.battleWon, 'never beat Arpit').toBe(true);
 
     // 7. The registry.

@@ -69,7 +69,11 @@ if (devStage === 'intro') {
         renderer,
         state,
         track: (event, data) => telemetry.track(event, data),
-        onEnd: () => stack.pop(),
+        // Mirrors the real leader fight: the win is what unlocks the registry.
+        onEnd: (won) => {
+          if (won) state.battleWon = true;
+          stack.pop();
+        },
       }),
     );
   }
