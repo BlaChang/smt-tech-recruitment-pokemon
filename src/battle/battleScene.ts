@@ -105,6 +105,17 @@ export class BattleScene implements Scene {
     return this.foes[this.foeIndex];
   }
 
+  /**
+   * The opponent's last mon, still valid after it has fainted.
+   *
+   * Both indices run one past the end when a side is wiped, and the scene
+   * keeps rendering for several frames while the victory text plays. Render
+   * must therefore never read `foe`/`active` directly.
+   */
+  private get lastFoe(): MonState {
+    return this.foes[Math.min(this.foeIndex, this.foes.length - 1)];
+  }
+
   onEnter(): void {
     audio.playMusic('battle');
     this.deps.state.battleTurns = 0;
@@ -399,23 +410,78 @@ export class BattleScene implements Scene {
   }
 
   render(r: Renderer): void {
-    r.clear('#f0ead6');
-    r.rect(0, 0, VIEW_W, 66, '#9fd0e8', true);
-    // Platforms sit directly under each combatant's feet, centred on a
-    // full-width 64px sprite.
-    r.rect(FOE_X - 8, FOE_FEET - 2, 80, 7, '#c8b98a', true);
-    r.rect(PLAYER_X - 10, PLAYER_FEET - 2, 84, 7, '#c8b98a', true);
+    this.drawField(r);
 
-    this.drawMon(r, this.foe, FOE_X, FOE_FEET, this.foeFlash, true);
-    this.drawMon(r, this.active, PLAYER_X, PLAYER_FEET, this.playerFlash, false);
+    this.drawMon(r, this.lastFoe, FOE_X, FOE_FEET, this.foeFlash, true);
+    this.drawMon(r, this.lastActive, PLAYER_X, PLAYER_FEET, this.playerFlash, false);
 
     // Panels sit opposite their own mon so neither covers the other.
-    this.drawHpPanel(r, this.foe, 6, 8, false);
-    this.drawHpPanel(r, this.active, VIEW_W - 136, 66, true);
+    this.drawHpPanel(r, this.lastFoe, 6, 8, false);
+    this.drawHpPanel(r, this.lastActive, VIEW_W - 136, 66, true);
 
     if (this.phase === 'menu') this.drawMoveGrid(r);
     this.textbox.render(r);
     this.menu.render(r);
+  }
+
+  /**
+   * The backdrop and the two platforms.
+   *
+   * Each platform is positioned by its drawn content rather than its frame:
+   * the art has generous transparent margins, so lining up the frame would
+   * float the mons above their bases. Falls back to flat bands and bars
+   * when the backdrop art is missing.
+   */
+  private drawField(r: Renderer): void {
+    const bg = assets.get('ui:bbBg');
+    if (bg) {
+      // 256 wide against a 240 screen; centre the overspill.
+      const x = Math.round((VIEW_W - bg.width) / 2);
+      r.sprite(bg, 0, 0, bg.width, bg.height, x, 0, true);
+      // The backdrop is shorter than the screen. Stretch its last row down
+      // so nothing shows through beside and below the message box.
+      if (bg.height < VIEW_H) {
+        r.sprite(
+          bg, 0, bg.height - 1, bg.width, 1,
+          x, bg.height, true, false, bg.width, VIEW_H - bg.height,
+        );
+      }
+    } else {
+      r.clear('#f0ead6');
+      r.rect(0, 0, VIEW_W, 66, '#9fd0e8', true);
+    }
+
+    this.drawBase(r, 'bbBase1', FOE_X + 32, FOE_FEET, 80, FOE_FEET - 2);
+    this.drawBase(r, 'bbBase0', PLAYER_X + 32, PLAYER_FEET, 84, PLAYER_FEET - 2);
+  }
+
+  /** Centres a platform's drawn ellipse under a mon's feet. */
+  private drawBase(
+    r: Renderer,
+    slot: 'bbBase0' | 'bbBase1',
+    centreX: number,
+    feet: number,
+    fallbackW: number,
+    fallbackY: number,
+  ): void {
+    const art = assets.get(`ui:${slot}`);
+    const meta = UI_ATLAS[slot];
+    const box = meta?.content;
+    if (!art || !box) {
+      r.rect(Math.round(centreX - fallbackW / 2), fallbackY, fallbackW, 7, '#c8b98a', true);
+      return;
+    }
+
+    const [left, top, right, bottom] = box;
+    // Stand the mon a third of the way down the ellipse, which is where its
+    // top surface reads rather than its front edge.
+    const surface = top + Math.round((bottom - top) / 3);
+    r.sprite(
+      art, 0, 0, art.width, art.height,
+      Math.round(centreX - (left + right) / 2),
+      Math.round(feet - surface),
+      true,
+    );
   }
 
   /** Emerald's fight panel: four moves on the left, type and power on the right. */
@@ -437,7 +503,7 @@ export class BattleScene implements Scene {
       const my = y + 12 + row * 14;
       const label = mv.effect === 'heal' ? `${mv.name} x${healsLeft(this.active)}` : mv.name;
       // Emerald's fight box is pale, so its text is dark.
-      drawShadowText(r, label.slice(0, 13), mx, my, '#3a3438', '#c8c0c8');
+      drawShadowText(r, label, mx, my, '#3a3438', '#c8c0c8');
       if (i === this.moveIndex) drawShadowText(r, '>', mx - 7, my, '#e04038', '#f8c0b8');
     });
 
@@ -458,7 +524,8 @@ export class BattleScene implements Scene {
   }
 
   /** `feet` is the y of the ground line; sprites are bottom-aligned onto it. */
-  private drawMon(r: Renderer, mon: MonState, x: number, feet: number, flash: number, isFoe: boolean): void {
+  private drawMon(r: Renderer, mon: MonState | undefined, x: number, feet: number, flash: number, isFoe: boolean): void {
+    if (!mon) return;
     if (flash > 0 && Math.floor(flash / 3) % 2 === 0) return;
 
     const art = assets.get(`mon:${mon.spec.id}`);
@@ -486,7 +553,8 @@ export class BattleScene implements Scene {
   }
 
   /** Emerald databox: the panel art, its own HP gradient, and its digit font. */
-  private drawHpPanel(r: Renderer, mon: MonState, x: number, y: number, showNumbers: boolean): void {
+  private drawHpPanel(r: Renderer, mon: MonState | undefined, x: number, y: number, showNumbers: boolean): void {
+    if (!mon) return;
     const key = showNumbers ? 'databoxPlayer' : 'databoxFoe';
     const meta = UI_ATLAS[key];
     const art = assets.get(`ui:${key}`);

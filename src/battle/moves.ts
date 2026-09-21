@@ -1,5 +1,12 @@
 export type MoveEffect = 'none' | 'heal' | 'buff-attack' | 'buff-defense' | 'debuff-attack' | 'recoil';
 
+/**
+ * Names are capped at MAX_MOVE_NAME characters: the fight panel shows four
+ * moves in a 2x2 grid, so each gets half its width. Longer names used to be
+ * sliced mid-word, which read as a rendering bug.
+ */
+export const MAX_MOVE_NAME = 12;
+
 export interface Move {
   id: string;
   name: string;
@@ -37,7 +44,7 @@ export const MOVES: Record<string, Move> = {
   },
   scheduleSlip: {
     id: 'scheduleSlip',
-    name: 'SCHEDULE SLIP',
+    name: 'SLIPPAGE',
     power: 16,
     accuracy: 1,
     effect: 'debuff-attack',
@@ -45,7 +52,7 @@ export const MOVES: Record<string, Move> = {
   },
   herdVolunteers: {
     id: 'herdVolunteers',
-    name: 'HERD VOLUNTEERS',
+    name: 'VOLUNTEERS',
     power: 20,
     accuracy: 1,
     effect: 'buff-attack',
@@ -77,7 +84,7 @@ export const MOVES: Record<string, Move> = {
   },
   tileThePlane: {
     id: 'tileThePlane',
-    name: 'TILE THE PLANE',
+    name: 'TESSELLATE',
     power: 30,
     accuracy: 1,
     effect: 'none',
@@ -93,7 +100,7 @@ export const MOVES: Record<string, Move> = {
   },
   symmetryGroup: {
     id: 'symmetryGroup',
-    name: 'SYMMETRY GROUP',
+    name: 'SYMMETRY',
     power: 0,
     accuracy: 1,
     effect: 'buff-attack',
@@ -101,7 +108,7 @@ export const MOVES: Record<string, Move> = {
   },
   mergeConflict: {
     id: 'mergeConflict',
-    name: 'MERGE CONFLICT',
+    name: 'MERGE CLASH',
     power: 26,
     accuracy: 1,
     effect: 'none',
@@ -149,7 +156,7 @@ export const MOVES: Record<string, Move> = {
   },
   cacheInvalidate: {
     id: 'cacheInvalidate',
-    name: 'CACHE INVALIDATE',
+    name: 'CACHE PURGE',
     power: 30,
     accuracy: 0.9,
     effect: 'none',
@@ -181,7 +188,7 @@ export const MOVES: Record<string, Move> = {
   },
   ddos: {
     id: 'ddos',
-    name: 'REFRESH STORM',
+    name: 'F5 STORM',
     power: 34,
     accuracy: 0.9,
     effect: 'none',

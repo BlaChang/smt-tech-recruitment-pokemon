@@ -23,6 +23,8 @@ const LINE_H = 11;
 const LINES_PER_PAGE = 3;
 /** Characters revealed per frame; ~3.5 lines/second reads comfortably. */
 const TYPE_SPEED = 0.75;
+/** Advance chime, 25% down on the other effects. */
+const TEXT_VOLUME = 0.75;
 
 export class TextBox {
   visible = false;
@@ -74,7 +76,8 @@ export class TextBox {
 
     // Past this point the text genuinely moves on. Only A is announced; B
     // advances quietly.
-    if (pressedA) audio.play('text');
+    // Quieter than the other effects: it fires on nearly every keypress.
+    if (pressedA) audio.play('text', TEXT_VOLUME);
 
     if (this.page < this.pages.length - 1) {
       this.page++;

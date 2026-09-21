@@ -56,17 +56,47 @@ class FakeInput {
   }
 }
 
+/**
+ * A renderer that draws nothing but implements everything.
+ *
+ * The harness calls render() on every tick, so any scene that reaches for a
+ * missing mon, tile or image throws here rather than in someone's browser.
+ */
 function fakeRenderer(): Renderer {
+  const ctx = {
+    drawImage() {},
+    fillRect() {},
+    strokeRect() {},
+    fillText() {},
+    measureText: (t: string) => ({ width: t.length * 5 }),
+    save() {},
+    restore() {},
+    translate() {},
+    scale() {},
+    beginPath() {},
+    moveTo() {},
+    lineTo() {},
+    stroke() {},
+    fillStyle: '',
+    strokeStyle: '',
+    lineWidth: 1,
+    font: '',
+    globalCompositeOperation: 'source-over',
+    imageSmoothingEnabled: false,
+    textBaseline: 'top',
+  };
   return {
     camX: 0,
     camY: 0,
-    ctx: {} as CanvasRenderingContext2D,
+    ctx: ctx as unknown as CanvasRenderingContext2D,
     fitToWindow() {},
     centerOn() {},
     clear() {},
     rect() {},
     strokeRect() {},
     sprite() {},
+    nineSlice() {},
+    line() {},
     text() {},
     textCentered() {},
     measure: (s: string) => s.length * 5,
@@ -121,6 +151,9 @@ function setup() {
     for (let i = 0; i < n; i++) {
       stack.update(input as unknown as Input);
       input.endFrame();
+      // Render every frame too: a crash in a draw path is just as fatal as
+      // one in update, and only rendering catches it.
+      stack.render(renderer);
     }
   };
 

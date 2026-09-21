@@ -10,8 +10,9 @@ import {
   MAX_STAGE,
   MIN_STAGE,
 } from '../battle/engine';
-import { move, MOVES } from '../battle/moves';
-import { LEADER_TEAM, playerTeam, SHIELDED_MON_ID, STARTERS } from '../battle/teams';
+import { MAX_MOVE_NAME, move, MOVES } from '../battle/moves';
+import { LEADER_TEAM, playerTeam, SHIELDED_MON_ID, STARTERS, type MonSpec } from '../battle/teams';
+import { rivalFor, rivalTeam } from '../battle/rivals';
 import { QUESTIONS, randomQuestion } from '../battle/questions';
 import { BattleScene } from '../battle/battleScene';
 import { createGameState } from '../state/gameState';
@@ -287,5 +288,89 @@ describe('low HP warning', () => {
     inner.phase = 'done';
     for (let i = 0; i < 200; i++) inner.updateLowHpWarning();
     expect(played).toEqual([]);
+  });
+});
+
+describe('rendering a finished battle', () => {
+  /** A renderer that does nothing but accepts every call. */
+  function stubRenderer(): Renderer {
+    const ctx = {
+      drawImage() {}, fillRect() {}, strokeRect() {}, fillText() {},
+      measureText: (t: string) => ({ width: t.length * 5 }),
+      save() {}, restore() {}, translate() {}, scale() {},
+      beginPath() {}, moveTo() {}, lineTo() {}, stroke() {},
+    };
+    return {
+      camX: 0, camY: 0, ctx: ctx as unknown as CanvasRenderingContext2D,
+      clear() {}, rect() {}, strokeRect() {}, sprite() {}, nineSlice() {},
+      line() {}, text() {}, textCentered() {}, centerOn() {}, fitToWindow() {},
+      measure: (s: string) => s.length * 5,
+    } as unknown as Renderer;
+  }
+
+  /** The private fields these tests need to drive into an end state. */
+  interface Internals {
+    party: ReturnType<typeof createMon>[];
+    foes: ReturnType<typeof createMon>[];
+    partyIndex: number;
+    foeIndex: number;
+  }
+
+  function scene(opponentTeam?: MonSpec[]): { battle: BattleScene; inner: Internals } {
+    const state = { ...createGameState(), starter: 'francis' };
+    const battle = new BattleScene({
+      renderer: stubRenderer(),
+      state,
+      opponent: opponentTeam ? { name: 'RIVAL', team: opponentTeam } : undefined,
+      track: () => {},
+      onEnd: () => {},
+    });
+    return { battle, inner: battle as unknown as Internals };
+  }
+
+  it('draws after the last opponent faints', () => {
+    // Reported crash: beating a one-mon rival left foeIndex past the end
+    // while the victory text was still playing, and render read it directly.
+    const { battle, inner } = scene(rivalTeam(rivalFor('francis')));
+    inner.foes[0].hp = 0;
+    inner.foeIndex = inner.foes.length;
+    expect(() => battle.render(stubRenderer())).not.toThrow();
+  });
+
+  it('draws after the player faints', () => {
+    const { battle, inner } = scene();
+    inner.party[0].hp = 0;
+    inner.partyIndex = inner.party.length;
+    expect(() => battle.render(stubRenderer())).not.toThrow();
+  });
+
+  it('draws with both sides wiped', () => {
+    const { battle, inner } = scene();
+    inner.partyIndex = inner.party.length;
+    inner.foeIndex = inner.foes.length;
+    expect(() => battle.render(stubRenderer())).not.toThrow();
+  });
+
+  it('draws normally mid-battle', () => {
+    const { battle } = scene();
+    expect(() => battle.render(stubRenderer())).not.toThrow();
+  });
+});
+
+describe('move names', () => {
+  it('all fit a cell of the fight grid', () => {
+    // Half the fight panel, so four moves can sit in a 2x2 without clipping.
+    for (const mv of Object.values(MOVES)) {
+      expect(mv.name.length, `"${mv.name}" is too long for the grid`).toBeLessThanOrEqual(
+        MAX_MOVE_NAME,
+      );
+    }
+  });
+
+  it('still fit once a heal shows its remaining uses', () => {
+    for (const mv of Object.values(MOVES)) {
+      const label = mv.effect === 'heal' ? `${mv.name} x2` : mv.name;
+      expect(label.length, `"${label}" overflows its cell`).toBeLessThanOrEqual(MAX_MOVE_NAME + 3);
+    }
   });
 });

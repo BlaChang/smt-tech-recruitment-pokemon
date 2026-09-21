@@ -43,7 +43,7 @@ export type CharacterKey = (typeof CHARACTER_KEYS)[number];
 /** Emerald UI panels, extracted by tools/extract_ui.py. */
 export const UI_KEYS = [
   'message', 'panel', 'fightMoves', 'fightInfo', 'databoxPlayer', 'databoxFoe', 'hpFill',
-  'numbers', 'font', 'portraitProfessor',
+  'numbers', 'font', 'portraitProfessor', 'bbBg', 'bbBase0', 'bbBase1',
 ] as const;
 
 /** Battle portraits: one frame, no animation. */

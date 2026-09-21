@@ -22,6 +22,11 @@ import os
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), '..'))
 SRC = os.path.join(ROOT, 'art-source', 'Emerald UI Pack 1.2', 'Graphics', 'UI', 'Battle')
+BACKDROPS = os.path.join(ROOT, 'art-source', 'Emerald UI Pack 1.2', 'Graphics', 'Battlebacks')
+
+# Which battleback the arena uses. Any set in Graphics/Battlebacks works:
+# indoor1, indoor2, arena1..5, cave, forest, grass, sea and so on.
+BATTLEBACK = 'arena1'
 OUT = os.path.join(ROOT, 'public', 'assets', 'ui')
 MAPPING = os.path.join(ROOT, 'src', 'content', 'uiAtlas.json')
 
@@ -60,6 +65,12 @@ HP_RECTS = {
 # icon_numbers is "0123456789/" in one strip.
 GLYPHS = '0123456789/'
 
+# The backdrop pieces, mapped to the slots the battle scene draws.
+#   bg     the backdrop behind everything
+#   base1  the far platform, under the opponent
+#   base0  the near platform, under the player
+BACKDROP_PARTS = {'bbBg': 'bg', 'bbBase1': 'base1', 'bbBase0': 'base0'}
+
 
 def half(Image, name):
     im = Image.open(os.path.join(SRC, name + '.png')).convert('RGBA')
@@ -72,6 +83,51 @@ def half(Image, name):
             if px[x + 1, y] != c or px[x, y + 1] != c or px[x + 1, y + 1] != c:
                 raise SystemExit(f'{name}: not a clean 2x upscale; halving would lose detail')
     return im.resize((im.width // 2, im.height // 2), Image.NEAREST)
+
+
+def halve_resampled(Image, path):
+    """
+    Halves a backdrop.
+
+    Unlike the UI panels these are not clean 2x upscales -- they carry real
+    detail at 512px -- so they have to be resampled. BOX averages whole
+    source pixels, which keeps the soft gradients smooth without the ringing
+    a sharper filter would add.
+    """
+    im = Image.open(path).convert('RGBA')
+    return im.resize((im.width // 2, im.height // 2), Image.BOX)
+
+
+# Essentials marks the bottom of the near platform with a solid maroon strip
+# that its own message box hides. This game's box sits higher, so it shows.
+CUT_MARKER = (128, 0, 0)
+
+
+def strip_cut_marker(img):
+    """
+    Drops the maroon cut marker from the bottom of the platform.
+
+    Trailing transparent rows are skipped first: the marker sits above them,
+    so stopping at the first empty row would find nothing.
+    """
+    px = img.load()
+
+    def opaque(y):
+        return [px[x, y] for x in range(img.width) if px[x, y][3] > 0]
+
+    height = img.height
+    while height > 1 and not opaque(height - 1):
+        height -= 1
+
+    while height > 1:
+        row = opaque(height - 1)
+        marker = sum(1 for p in row if p[0] > 100 and p[1] < 40 and p[2] < 40)
+        if row and marker > len(row) * 0.6:
+            height -= 1
+        else:
+            break
+
+    return img.crop((0, 0, img.width, height)) if height < img.height else img
 
 
 def build():
@@ -100,6 +156,23 @@ def build():
             entry['glyph'] = img.width // len(GLYPHS)
             entry['chars'] = GLYPHS
         meta[key] = entry
+
+    for slot, part in BACKDROP_PARTS.items():
+        path = os.path.join(BACKDROPS, f'{BATTLEBACK}_{part}.png')
+        if not os.path.exists(path):
+            print(f'  {slot}: no {BATTLEBACK}_{part}.png, skipping')
+            continue
+        img = halve_resampled(Image, path)
+        if slot == 'bbBase0':
+            img = strip_cut_marker(img)
+        img.save(os.path.join(OUT, f'{slot}.png'))
+        box = img.getbbox()
+        entry = {'w': img.width, 'h': img.height}
+        if box:
+            # Where the drawn platform sits inside its frame, so the battle
+            # scene can line its surface up with a mon's feet.
+            entry['content'] = [box[0], box[1], box[2], box[3]]
+        meta[slot] = entry
 
     with open(MAPPING, 'w') as f:
         json.dump(meta, f, indent=2, sort_keys=True)
