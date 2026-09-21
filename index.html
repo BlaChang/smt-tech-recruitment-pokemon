@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SMT Tech Gym</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div id="stage">
+      <canvas id="screen" width="240" height="160"></canvas>
+      <div id="overlay"></div>
+    </div>
+    <p id="hint">Arrow keys / WASD to move &middot; Z or Enter to interact &middot; X to cancel &middot; M for sound</p>
+    <div id="touch-warning">
+      <div>
+        <h1>SMT TECH GYM</h1>
+        <p>This one wants a keyboard. Open it on a laptop and challenge the gym.</p>
+        <button id="touch-continue">I have a keyboard</button>
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

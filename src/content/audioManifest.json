@@ -1,0 +1,22 @@
+{
+  "badge": "badge.mp3",
+  "bump": "bump.mp3",
+  "crate": "crate.mp3",
+  "cursor": "cursor.mp3",
+  "debuff": "debuff.mp3",
+  "door": "door.mp3",
+  "gate": "gate.mp3",
+  "heal": "heal.mp3",
+  "hit": "hit.mp3",
+  "lowHp": "lowHp.mp3",
+  "miss": "miss.mp3",
+  "music": {
+    "battle": "bgm-battle.mp3",
+    "gym": "bgm-gym.mp3",
+    "menu": "bgm-menu.mp3"
+  },
+  "panel": "panel.mp3",
+  "select": "select.mp3",
+  "solved": "solved.mp3",
+  "text": "text.mp3"
+}

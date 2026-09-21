@@ -1,0 +1,98 @@
+{
+  "boulder": [
+    2,
+    2
+  ],
+  "buttonOff": [
+    4,
+    1
+  ],
+  "buttonOn": [
+    5,
+    1
+  ],
+  "console": [
+    2,
+    1
+  ],
+  "door": [
+    0,
+    1
+  ],
+  "floorA": [
+    3,
+    0
+  ],
+  "floorB": [
+    4,
+    0
+  ],
+  "floorC": [
+    5,
+    0
+  ],
+  "floorD": [
+    6,
+    0
+  ],
+  "floorFlat": [
+    7,
+    0
+  ],
+  "gateArmH": [
+    6,
+    2
+  ],
+  "gateArmV": [
+    7,
+    2
+  ],
+  "gateHub": [
+    5,
+    2
+  ],
+  "pillar": [
+    1,
+    1
+  ],
+  "shelf": [
+    3,
+    1
+  ],
+  "slantNE": [
+    7,
+    1
+  ],
+  "slantNW": [
+    6,
+    1
+  ],
+  "slantSE": [
+    1,
+    2
+  ],
+  "slantSW": [
+    0,
+    2
+  ],
+  "socket": [
+    3,
+    2
+  ],
+  "socketFilled": [
+    4,
+    2
+  ],
+  "wall": [
+    0,
+    0
+  ],
+  "wallBase": [
+    2,
+    0
+  ],
+  "wallCap": [
+    1,
+    0
+  ]
+}
