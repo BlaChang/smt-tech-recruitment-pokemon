@@ -20,9 +20,6 @@ const canvas = document.querySelector<HTMLCanvasElement>('#screen');
 const overlay = document.querySelector<HTMLDivElement>('#overlay');
 if (!canvas || !overlay) throw new Error('Missing #screen or #overlay in the document');
 
-const HINT_TEXT =
-  'Arrow keys / WASD to move \u00b7 Z or Enter to interact \u00b7 X to cancel \u00b7 M for sound';
-
 const renderer = new Renderer(canvas);
 const input = new Input();
 const stack = new SceneStack();
@@ -113,17 +110,6 @@ audio.playMusic('menu');
 // starts on the first real keypress rather than on load.
 window.addEventListener('keydown', () => audio.unlock(), { once: true });
 window.addEventListener('pointerdown', () => audio.unlock(), { once: true });
-
-// M mutes. Handled here rather than in Input because it is not a game button.
-window.addEventListener('keydown', (e) => {
-  if (e.code !== 'KeyM' || e.metaKey || e.ctrlKey) return;
-  const target = e.target as HTMLElement | null;
-  const tag = target?.tagName?.toLowerCase();
-  if (tag === 'input' || tag === 'textarea' || target?.isContentEditable) return;
-  const muted = audio.toggleMute();
-  const hint = document.querySelector('#hint');
-  if (hint) hint.textContent = muted ? 'Sound off — press M to unmute' : HINT_TEXT;
-});
 
 startLoop(
   () => {

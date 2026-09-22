@@ -110,8 +110,9 @@ by `Opponent.music`, defaulting to Arpit's. Switching crossfades over ~300 ms ra
 > available here does that — ffmpeg 9 has no GSF decoder, and vgmstream only
 > handles streamed audio. Hence the mp3s.
 
-Audio never blocks the game: a missing file degrades to silence. `M` mutes,
-and the choice is remembered.
+Audio never blocks the game: a missing file degrades to silence. There is no
+in-game mute -- volume is the operating system's job, and a toggle is one
+more thing that can be left stuck in the wrong state.
 
 ## Font — "Pokemon Emerald" by aztecwarrior28
 

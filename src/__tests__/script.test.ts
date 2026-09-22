@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { ScriptRunner, type Script, type ScriptContext } from '../content/script';
 import { createGameState } from '../state/gameState';
+import { PICK_STARTER } from '../content/intro';
+import { STARTERS } from '../battle/teams';
 import type { Input } from '../engine/input';
 import type { Renderer } from '../engine/renderer';
 
@@ -188,5 +190,77 @@ describe('script runner', () => {
     h.runner.update(h.input);
     h.runner.stop();
     expect(h.runner.running).toBe(false);
+  });
+});
+
+/**
+ * The starter menu, driven by a scripted sequence of selections.
+ *
+ * Separate from `harness` above, which answers every menu the same way; the
+ * bug this covers only appears on the second menu you touch.
+ */
+function pickerHarness(picks: number[]) {
+  let at = 0;
+  const shown: string[] = [];
+  const textbox = {
+    visible: false,
+    show(text: string) { shown.push(text); this.visible = true; },
+    update() { this.visible = false; return true; },
+    hide() { this.visible = false; },
+    render() {},
+  };
+  const menu = {
+    visible: false,
+    open() { this.visible = true; },
+    update() { this.visible = false; return picks[Math.min(at++, picks.length - 1)]; },
+    close() { this.visible = false; },
+    render() {},
+  };
+  const ctx: ScriptContext = {
+    textbox: textbox as unknown as ScriptContext['textbox'],
+    menu: menu as unknown as ScriptContext['menu'],
+    renderer: {} as Renderer,
+    state: createGameState(),
+    startBattle: () => {},
+    openRegistry: () => {},
+    startRivalBattle: () => {},
+    askName: () => {},
+    track: () => {},
+  };
+  const runner = new ScriptRunner(ctx);
+  runner.start([PICK_STARTER]);
+  for (let i = 0; i < 400 && runner.running; i++) runner.update({} as Input);
+  return { state: ctx.state, shown, menusAnswered: at };
+}
+
+describe('choosing a starter', () => {
+  const TAKE = 0;
+  const LOOK = 1;
+
+  it('takes the one you actually confirm, not the one you looked at', () => {
+    // 1st: hear about BLOBHEART, keep looking. 2nd: hear about GOOSE, take it.
+    const { state } = pickerHarness([0, LOOK, 1, TAKE]);
+    expect(state.starter).toBe('goose');
+  });
+
+  it('never commits while you are only browsing', () => {
+    // The reported bug: selecting a second starter to read about silently
+    // chose it, because the re-offer menu skipped the take/look confirm.
+    const { state } = pickerHarness([2, LOOK, 0, LOOK, 1, LOOK, 2, LOOK]);
+    expect(state.starter, 'browsing picked a starter on its own').toBeFalsy();
+    expect(state.flags.has('starter:chosen')).toBe(false);
+  });
+
+  it('describes a starter before asking you to commit to it', () => {
+    for (let i = 0; i < STARTERS.length; i++) {
+      const { shown } = pickerHarness([i, TAKE]);
+      const blurb = STARTERS[i].blurb ?? '';
+      expect(shown[0], `${STARTERS[i].name} was taken without its blurb`).toBe(blurb);
+    }
+  });
+
+  it('describes the second starter too, however deep you browse', () => {
+    const { shown } = pickerHarness([0, LOOK, 2, TAKE]);
+    expect(shown).toContain(STARTERS[2].blurb ?? '');
   });
 });

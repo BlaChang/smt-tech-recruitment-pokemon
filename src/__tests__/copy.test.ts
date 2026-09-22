@@ -48,7 +48,20 @@ function texts(value: unknown): string[] {
   return [];
 }
 
-function lines(script: Script, out: Array<{ text: string; as?: string }> = []) {
+/**
+ * Collects every line a script can reach.
+ *
+ * Scripts may be cyclic: the starter menu's "Look at the others" leads back
+ * into the same menu, so browsing and committing share one confirm step.
+ * Visited scripts are therefore tracked, or this walk never returns.
+ */
+function lines(
+  script: Script,
+  out: Array<{ text: string; as?: string }> = [],
+  seen: Set<Script> = new Set(),
+) {
+  if (seen.has(script)) return out;
+  seen.add(script);
   for (const cmd of script as ScriptCommand[]) {
     if ('say' in cmd) {
       const speakers = texts(cmd.as);
@@ -59,15 +72,15 @@ function lines(script: Script, out: Array<{ text: string; as?: string }> = []) {
     }
     if ('choice' in cmd) {
       for (const option of cmd.choice) out.push({ text: option });
-      for (const branch of cmd.branch) lines(branch, out);
+      for (const branch of cmd.branch) lines(branch, out, seen);
     }
     if ('ifFlag' in cmd) {
-      lines(cmd.then, out);
-      if (cmd.otherwise) lines(cmd.otherwise, out);
+      lines(cmd.then, out, seen);
+      if (cmd.otherwise) lines(cmd.otherwise, out, seen);
     }
     if ('ifState' in cmd) {
-      lines(cmd.then, out);
-      if (cmd.otherwise) lines(cmd.otherwise, out);
+      lines(cmd.then, out, seen);
+      if (cmd.otherwise) lines(cmd.otherwise, out, seen);
     }
   }
   return out;

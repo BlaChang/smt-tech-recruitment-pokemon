@@ -138,23 +138,24 @@ describe('music', () => {
   });
 });
 
-describe('mute', () => {
-  it('silences and resumes the current track', () => {
-    bus.unlock();
-    bus.playMusic('gym');
-    settle();
-    const track = FakeAudio.created[0];
-
-    expect(bus.toggleMute()).toBe(true);
-    expect(track.paused).toBe(true);
-
-    expect(bus.toggleMute()).toBe(false);
-    expect(track.paused).toBe(false);
-    expect(track.volume).toBeGreaterThan(0);
+describe('there is no in-game mute', () => {
+  it('leaves the volume to the operating system', () => {
+    // Deliberately removed: an in-game toggle is one more thing to get stuck
+    // in the wrong state, and every machine already has a volume key.
+    expect('toggleMute' in bus).toBe(false);
+    expect('isMuted' in bus).toBe(false);
   });
 
-  it('is remembered across sessions', () => {
-    bus.toggleMute();
-    expect(new AudioBus().isMuted).toBe(true);
+  it('plays for someone who muted back when that was possible', () => {
+    // Their old preference is still in localStorage. It must not silence
+    // them now that there is no way to undo it.
+    localStorage.setItem('smt-tech-gym:muted', '1');
+    const revived = new AudioBus();
+    revived.unlock();
+    revived.playMusic('gym');
+    settle();
+    const track = FakeAudio.created.at(-1);
+    expect(track?.paused, 'a stale mute is still silencing the game').toBe(false);
+    expect(track?.volume).toBeGreaterThan(0);
   });
 });

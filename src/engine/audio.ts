@@ -32,7 +32,12 @@ export type MusicName = 'menu' | 'gym' | 'rival' | 'battle';
 
 const SFX_VOLUME = 0.5;
 const MUSIC_VOLUME = 0.32;
-const MUTE_KEY = 'smt-tech-gym:muted';
+/**
+ * Left over from an in-game mute that no longer exists. Cleared on load so
+ * a tester who muted back when it did is not left wondering where the sound
+ * went. Volume is the operating system's job now.
+ */
+const RETIRED_MUTE_KEY = 'smt-tech-gym:muted';
 
 export class AudioBus {
   private ctx: AudioContext | null = null;
@@ -43,13 +48,8 @@ export class AudioBus {
   private current: MusicName | null = null;
   private fading = 0;
   private unlocked = false;
-  private muted = readMuted();
   /** Names that failed to load, so we do not retry or spam the console. */
   private absent = new Set<string>();
-
-  get isMuted(): boolean {
-    return this.muted;
-  }
 
   /**
    * Fetches and decodes every effect. Resolves even if some are missing, so
@@ -59,9 +59,15 @@ export class AudioBus {
     const Ctor = window.AudioContext ?? (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!Ctor) return;
 
+    try {
+      localStorage.removeItem(RETIRED_MUTE_KEY);
+    } catch {
+      /* private browsing; nothing to clean up */
+    }
+
     this.ctx = new Ctor();
     this.gain = this.ctx.createGain();
-    this.gain.gain.value = this.muted ? 0 : SFX_VOLUME;
+    this.gain.gain.value = SFX_VOLUME;
     this.gain.connect(this.ctx.destination);
 
     await Promise.all(
@@ -115,7 +121,6 @@ export class AudioBus {
   /** Short crossfade, so scene changes do not pop. */
   private switchTo(name: MusicName, base: string): void {
     const next = this.track(name, base);
-    const target = this.muted ? 0 : MUSIC_VOLUME;
 
     window.clearInterval(this.fading);
     const steps = 12;
@@ -124,7 +129,7 @@ export class AudioBus {
       [...this.tracks].filter(([key]) => key !== name).map(([key, el]) => [key, el.volume]),
     );
 
-    if (next && !this.muted) void next.play().catch(() => undefined);
+    if (next) void next.play().catch(() => undefined);
 
     this.fading = window.setInterval(() => {
       step++;
@@ -135,7 +140,7 @@ export class AudioBus {
         el.volume = start * (1 - t);
         if (t >= 1) el.pause();
       }
-      if (next) next.volume = target * t;
+      if (next) next.volume = MUSIC_VOLUME * t;
       if (t >= 1) window.clearInterval(this.fading);
     }, 25);
   }
@@ -152,7 +157,7 @@ export class AudioBus {
   }
 
   play(name: SoundName, volume = 1): void {
-    if (this.muted || !this.ctx || !this.gain) return;
+    if (!this.ctx || !this.gain) return;
     const buffer = this.buffers.get(name);
     if (!buffer) return;
 
@@ -168,38 +173,6 @@ export class AudioBus {
     source.start();
   }
 
-  toggleMute(): boolean {
-    this.muted = !this.muted;
-    writeMuted(this.muted);
-    if (this.gain) this.gain.gain.value = this.muted ? 0 : SFX_VOLUME;
-
-    for (const [name, el] of this.tracks) {
-      if (this.muted) {
-        el.pause();
-        el.volume = 0;
-      } else if (name === this.current && this.unlocked) {
-        el.volume = MUSIC_VOLUME;
-        void el.play().catch(() => undefined);
-      }
-    }
-    return this.muted;
-  }
-}
-
-function readMuted(): boolean {
-  try {
-    return localStorage.getItem(MUTE_KEY) === '1';
-  } catch {
-    return false;
-  }
-}
-
-function writeMuted(muted: boolean): void {
-  try {
-    localStorage.setItem(MUTE_KEY, muted ? '1' : '0');
-  } catch {
-    /* ignore */
-  }
 }
 
 /** Shared bus; scenes reach for this directly. */
