@@ -8,12 +8,20 @@
  * VITE_ variable is substituted into the bundle at build time and is
  * therefore published; these are not.
  *
- * Be clear about what this does and does not buy:
- *  - the sheet's URL and token are no longer in the page source, so nobody
- *    can post to the sheet directly or work out where it is
- *  - the token can be rotated without rebuilding the client
- *  - but /api/submit is itself public and unauthenticated. It is a narrower
- *    door, not a locked one. The validation below is what keeps junk out.
+ * What this does NOT do is stop an anonymous write. Anyone who knows this
+ * path can POST a plausible body and get a row: the function attaches the
+ * token for them. That was true before as well -- the token shipped in the
+ * bundle -- so the gain is not secrecy from a determined caller.
+ *
+ * The gain is a chokepoint. All traffic to the sheet now has to come through
+ * one function we control, which means:
+ *  - validation cannot be bypassed by posting straight at Apps Script
+ *  - the token rotates without rebuilding the client
+ *  - if the sheet ever gets spammed, the rate limit or challenge goes here,
+ *    and the fix ships without touching the game or the script
+ *
+ * The exposure is write-only. There is no GET and no read path, so the worst
+ * case is junk rows in a recruiting sheet, not disclosure.
  *
  * Env vars to set in Vercel (Project > Settings > Environment Variables):
  *   SHEETS_ENDPOINT  the Apps Script /exec url
@@ -39,6 +47,12 @@ interface Res {
 /** Generous for an application, far below anything worth storing. */
 const MAX_BODY = 64 * 1024;
 
+/** Funnel buckets currentStage() can produce, in src/app/telemetry.ts. */
+const STAGES = [
+  'applied', 'beat-leader', 'beat-rival', 'cleared-panels',
+  'attempting-panels', 'has-team', 'entered',
+];
+
 export default async function handler(req: Req, res: Res): Promise<void> {
   res.setHeader('Cache-Control', 'no-store');
 
@@ -62,11 +76,24 @@ export default async function handler(req: Req, res: Res): Promise<void> {
     res.status(400).send('unknown kind');
     return;
   }
+  const telemetry = payload.telemetry as Record<string, unknown> | undefined;
+  if (!telemetry || typeof telemetry !== 'object') {
+    res.status(400).send('no telemetry');
+    return;
+  }
   if (kind === 'application') {
     const application = payload.application as Record<string, unknown> | undefined;
     const email = typeof application?.email === 'string' ? application.email : '';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       res.status(400).send('bad email');
+      return;
+    }
+  } else {
+    // Abandonment rows have no email to check, so the funnel bucket is the
+    // only thing that has to look real. Without this, `{kind:'abandoned'}`
+    // on its own was enough to write a row.
+    if (typeof telemetry.stage !== 'string' || !STAGES.includes(telemetry.stage)) {
+      res.status(400).send('unknown stage');
       return;
     }
   }

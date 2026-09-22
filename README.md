@@ -108,14 +108,32 @@ local work never touches the real sheet. To exercise the real path, run
 `vercel dev` (which does serve the function) with `VITE_SUBMIT_URL=/api/submit`
 set, or point `VITE_SUBMIT_URL` straight at Apps Script.
 
-What the proxy is worth, stated honestly: the sheet's URL and token are no
-longer readable in the page, so nobody can write to the sheet directly or
-find out where it is, and the token can be rotated without rebuilding. But
-`/api/submit` is itself public and unauthenticated — a narrower door, not a
-locked one. It rejects non-POSTs, unknown payload kinds, bodies over 64 KB
-and applications without a usable email, and it discards any token a caller
-sends rather than passing it through. The `SUBMIT_TOKEN` check in `Code.gs`
-stays as a second gate.
+### What this is and is not worth
+
+It does **not** stop an anonymous write. Anyone who knows the path can POST a
+plausible body and get a row, because the function attaches the token for
+them. That was equally true before, when the token shipped in the bundle, so
+the gain is not secrecy from someone who is trying.
+
+The gain is a **chokepoint**. Every write now has to pass through one
+function, which means validation cannot be bypassed by posting straight at
+Apps Script, the token rotates without rebuilding the client, and if the
+sheet ever does get spammed the rate limit or challenge goes in one file and
+ships without touching the game or the script.
+
+The exposure is write-only — there is no GET and no read path — so the worst
+case is junk rows in a recruiting sheet, not disclosure. For a club
+recruiting page behind a QR code that is a proportionate place to stop.
+
+The function rejects non-POSTs, unknown payload kinds, bodies over 64 KB,
+applications without a usable email, and abandonment rows whose funnel stage
+is not one the game can actually produce. It overwrites any token a caller
+supplies rather than forwarding it. `Code.gs` keeps its own token check as a
+second gate.
+
+If spam ever actually happens, in rough order of effort: a hidden honeypot
+field, then Vercel's WAF rate limiting, then Cloudflare Turnstile on the
+form. None of it is worth adding before there is something to stop.
 
 Two sheets get written: `applications`, and `abandoned` for people who closed
 the tab without finishing. Because the gym is hard-gated, that second sheet is

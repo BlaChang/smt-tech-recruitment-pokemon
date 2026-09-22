@@ -151,4 +151,46 @@ describe('the proxy itself', () => {
     expect(status).toBe(200);
     vi.unstubAllGlobals();
   });
+
+  it('will not take an abandonment row on the strength of its kind alone', async () => {
+    // As first written, `{kind:'abandoned'}` was enough: there is no email
+    // to validate on that path, so nothing was checked at all.
+    expect((await call({ kind: 'abandoned' })).text).toBe('no telemetry');
+    expect((await call({ kind: 'abandoned', telemetry: {} })).text).toBe('unknown stage');
+    expect(
+      (await call({ kind: 'abandoned', telemetry: { stage: 'made-it-up' } })).text,
+    ).toBe('unknown stage');
+  });
+
+  it('requires telemetry on an application too', async () => {
+    expect((await call({ kind: 'application', application: { email: 'a@b.co' } })).text)
+      .toBe('no telemetry');
+  });
+
+  it('accepts every stage the game can actually report', async () => {
+    // If currentStage() gains a bucket and STAGES does not, real beacons
+    // start being rejected. This is the test that says so.
+    const { currentStage } = await import('../app/telemetry');
+    const { createGameState } = await import('../state/gameState');
+    const reachable = [
+      createGameState(),
+      { ...createGameState(), starter: 'goose' },
+      { ...createGameState(), starter: 'goose', panelPresses: 1 },
+      { ...createGameState(), flags: new Set(['puzzle:panels']) },
+      { ...createGameState(), flags: new Set(['rival:beaten']) },
+      { ...createGameState(), battleWon: true },
+      { ...createGameState(), applied: true },
+    ];
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('ok', { status: 200 })));
+    for (const state of reachable) {
+      const stage = currentStage(state as never);
+      const { status } = await call(
+        { kind: 'abandoned', telemetry: { stage } },
+        'POST',
+        { SHEETS_ENDPOINT: 'https://example.com/exec', SUBMIT_TOKEN: 'sekrit' },
+      );
+      expect(status, `the proxy rejects the real stage "${stage}"`).toBe(200);
+    }
+    vi.unstubAllGlobals();
+  });
 });
