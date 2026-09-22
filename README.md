@@ -103,6 +103,22 @@ published in the page source. These are not.
    - `SUBMIT_TOKEN` — must match `SUBMIT_TOKEN` in `Code.gs`
 3. Deploy. Nothing goes in `.env.local` for production.
 
+**`GET /api/submit` tells you if step 2 and 3 worked.** It answers
+`{"configured":true,"missing":[]}` when both variables are visible to the
+function, or lists the ones that are not — names only, never values. A `500`
+with the body `not configured` on a real submission means the same thing.
+
+Two things catch people out here:
+
+- **No `VITE_` prefix.** `VITE_SHEETS_ENDPOINT` is a different variable and
+  the function will not see it.
+- **Redeploy after adding them.** Vercel binds environment variables when a
+  deployment is built, so adding them does not fix the deployment already
+  serving traffic. Deployments → ⋯ → Redeploy.
+
+The function's own reason lands in Vercel → Deployments → the deployment →
+Functions → Logs, which says which variable is unset.
+
 `npm run dev` has no `/api` behind it, so submissions log to the console and
 local work never touches the real sheet. To exercise the real path, run
 `vercel dev` (which does serve the function) with `VITE_SUBMIT_URL=/api/submit`

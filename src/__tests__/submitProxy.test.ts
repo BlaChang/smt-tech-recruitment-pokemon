@@ -74,8 +74,30 @@ describe('the proxy itself', () => {
     telemetry: { sessionId: 'x' },
   };
 
-  it('refuses anything but POST', async () => {
-    expect((await call(GOOD, 'GET')).status).toBe(405);
+  it('refuses anything but POST and GET', async () => {
+    expect((await call(GOOD, 'PUT')).status).toBe(405);
+  });
+
+  it('reports on a GET which variables are missing, and no values', async () => {
+    const { status, text } = await call(null, 'GET');
+    expect(status).toBe(503);
+    const body = JSON.parse(text);
+    expect(body.configured).toBe(false);
+    expect(body.missing).toEqual(['SHEETS_ENDPOINT', 'SUBMIT_TOKEN']);
+  });
+
+  it('names only the variable actually missing', async () => {
+    const { text } = await call(null, 'GET', { SHEETS_ENDPOINT: 'https://x/exec' });
+    expect(JSON.parse(text).missing).toEqual(['SUBMIT_TOKEN']);
+  });
+
+  it('never puts a variable value in the health response', async () => {
+    const { text } = await call(null, 'GET', {
+      SHEETS_ENDPOINT: 'https://script.google.com/macros/s/SECRET/exec',
+      SUBMIT_TOKEN: 'sekrit',
+    });
+    expect(text).not.toMatch(/SECRET|sekrit|script\.google/);
+    expect(JSON.parse(text)).toEqual({ configured: true, missing: [] });
   });
 
   it('refuses a body that is not one of the two payloads', async () => {

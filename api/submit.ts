@@ -47,6 +47,12 @@ interface Res {
 /** Generous for an application, far below anything worth storing. */
 const MAX_BODY = 64 * 1024;
 
+/**
+ * Server-side variables this needs. Deliberately without a VITE_ prefix so
+ * they are never substituted into the client bundle.
+ */
+const REQUIRED = ['SHEETS_ENDPOINT', 'SUBMIT_TOKEN'] as const;
+
 /** Funnel buckets currentStage() can produce, in src/app/telemetry.ts. */
 const STAGES = [
   'applied', 'beat-leader', 'beat-rival', 'cleared-panels',
@@ -55,6 +61,20 @@ const STAGES = [
 
 export default async function handler(req: Req, res: Res): Promise<void> {
   res.setHeader('Cache-Control', 'no-store');
+
+  // A GET reports whether the deployment is wired up, naming any variable
+  // that is missing but never echoing a value. Without this, a
+  // "not configured" on a POST is indistinguishable from a typo in a
+  // variable name, the wrong Vercel environment, or an env var added after
+  // the last deploy -- and guessing between those is miserable.
+  if (req.method === 'GET') {
+    const missing = REQUIRED.filter((name) => !process.env[name]);
+    res.setHeader('Content-Type', 'application/json');
+    res.status(missing.length ? 503 : 200).send(
+      JSON.stringify({ configured: missing.length === 0, missing }),
+    );
+    return;
+  }
 
   if (req.method !== 'POST') {
     res.status(405).send('post only');
@@ -98,15 +118,21 @@ export default async function handler(req: Req, res: Res): Promise<void> {
     }
   }
 
-  const endpoint = process.env.SHEETS_ENDPOINT;
-  const token = process.env.SUBMIT_TOKEN;
-  if (!endpoint || !token) {
-    // Misconfiguration, not the caller's fault. Say so in the log, not in
-    // the response: a 500 body is visible to anyone who pokes at this.
-    console.error('[submit] SHEETS_ENDPOINT or SUBMIT_TOKEN is not set');
+  const missing = REQUIRED.filter((name) => !process.env[name]);
+  if (missing.length) {
+    // Misconfiguration, not the caller's fault. The names go to the log and
+    // to GET /api/submit; the POST body stays terse.
+    console.error(
+      `[submit] not configured: ${missing.join(', ')} unset. ` +
+        'Set these in Vercel > Settings > Environment Variables (no VITE_ ' +
+        'prefix), then redeploy -- env changes do not reach an existing ' +
+        'deployment.',
+    );
     res.status(500).send('not configured');
     return;
   }
+  const endpoint = process.env.SHEETS_ENDPOINT as string;
+  const token = process.env.SUBMIT_TOKEN as string;
 
   // The token is attached here, never in the browser. Anything the client
   // sent under that key is discarded.
