@@ -28,7 +28,7 @@ interface AudioManifest extends Partial<Record<SoundName, string>> {
 const FILES = MANIFEST as AudioManifest;
 
 /** Where each track plays. */
-export type MusicName = 'menu' | 'gym' | 'battle';
+export type MusicName = 'menu' | 'gym' | 'rival' | 'battle';
 
 const SFX_VOLUME = 0.5;
 const MUSIC_VOLUME = 0.32;

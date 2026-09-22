@@ -1,6 +1,6 @@
 import { VIEW_H, VIEW_W } from '../engine/config';
 import { assets } from '../engine/assets';
-import { audio } from '../engine/audio';
+import { audio, type MusicName } from '../engine/audio';
 import type { Input } from '../engine/input';
 import type { Renderer } from '../engine/renderer';
 import type { Scene } from '../engine/scenes';
@@ -43,12 +43,15 @@ export interface Opponent {
   team: MonSpec[];
   /** Mon that hides behind the math-question shield, if any. */
   shieldedId?: string;
+  /** Their battle theme. Defaults to Arpit's, which is the harder one. */
+  music?: MusicName;
 }
 
 export const ARPIT: Opponent = {
   name: 'ARPIT',
   team: LEADER_TEAM,
   shieldedId: SHIELDED_MON_ID,
+  music: 'battle',
 };
 
 export interface BattleDeps {
@@ -118,7 +121,7 @@ export class BattleScene implements Scene {
   }
 
   onEnter(): void {
-    audio.playMusic('battle');
+    audio.playMusic(this.opponent.music ?? 'battle');
     this.deps.state.battleTurns = 0;
     // Dev affordance: ?phase=menu drops straight into move select so the
     // fight panels can be inspected without playing through the intro.

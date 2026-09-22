@@ -82,6 +82,29 @@ describe('music', () => {
     expect(sources().at(-1)).toContain('bgm-battle');
   });
 
+  it('gives the rival their own theme, distinct from Arpit', () => {
+    bus.unlock();
+    bus.playMusic('rival');
+    settle();
+    expect(sources().at(-1)).toContain('bgm-rival');
+    // Arpit's is the one that has to feel like the end of the gym, so the
+    // two fights must not share a track.
+    bus.playMusic('battle');
+    settle();
+    expect(sources().at(-1)).toContain('bgm-battle');
+    expect(new Set(sources()).size).toBe(sources().length);
+  });
+
+  it('does not fetch Arpit\'s theme for the rival fight', () => {
+    // Arpit's track is four minutes long and the largest asset in the build;
+    // a candidate who never beats their rival should never download it.
+    bus.unlock();
+    bus.playMusic('gym');
+    bus.playMusic('rival');
+    settle();
+    expect(sources().some((src) => src.includes('bgm-battle'))).toBe(false);
+  });
+
   it('stops the outgoing track instead of layering them', () => {
     bus.unlock();
     bus.playMusic('gym');

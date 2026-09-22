@@ -435,7 +435,17 @@ describe('full playthrough', () => {
     h.faceAndTalk(rivalNpc?.x ?? 0, rivalNpc?.y ?? 0);
 
     let rivalGuard = 0;
-    while (!h.state.flags.has('rival:beaten') && rivalGuard++ < 6000) h.tap('a');
+    let rivalTheme: string | undefined;
+    while (!h.state.flags.has('rival:beaten') && rivalGuard++ < 6000) {
+      const scene = h.stack.top;
+      if (scene instanceof BattleScene) {
+        rivalTheme = (scene as unknown as { opponent: { music?: string } }).opponent.music;
+      }
+      h.tap('a');
+    }
+    // Arpit's theme is the largest asset in the build and it has to land as
+    // the end of the gym. The rival must not spend it first.
+    expect(rivalTheme, `${rival.name} should fight to their own theme`).toBe('rival');
     expect(h.state.flags.has('rival:beaten'), `never beat ${rival.name}`).toBe(true);
     // The rival is not the leader. If beating them set `battleWon`, Arpit
     // would greet you with his post-win speech and the loop below would

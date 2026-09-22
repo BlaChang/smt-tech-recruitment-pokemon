@@ -13,7 +13,8 @@
   "music": {
     "battle": "bgm-battle.mp3",
     "gym": "bgm-gym.mp3",
-    "menu": "bgm-menu.mp3"
+    "menu": "bgm-menu.mp3",
+    "rival": "bgm-rival.mp3"
   },
   "panel": "panel.mp3",
   "select": "select.mp3",

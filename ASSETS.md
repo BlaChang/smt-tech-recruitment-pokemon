@@ -90,16 +90,18 @@ the game loads what actually exists rather than guessing at an extension.
 | --- | --- |
 | Departure From the Hoenn Region | title, professor's lab, name entry, starter pick |
 | Littleroot Town | every room of the gym |
+| Rival Battle! | Calista, Ritwin or Blake |
 | Semifinal Battle | the fight with Arpit |
 
 Sources are matched on a substring of the filename (see `MUSIC` in
 `extract_audio.py`), so the rip's track numbering can change without breaking
-the mapping. Re-encoded to 96 kbps, which takes the three from 9.6 MB to
-4.8 MB.
+the mapping. Re-encoded to 96 kbps, which takes the four from 13 MB to
+6.3 MB.
 
 Tracks are **fetched lazily** — nothing downloads until a scene asks for it,
-so the battle theme, much the largest file, costs a visitor nothing unless
-they reach Arpit. Switching crossfades over ~300 ms rather than cutting.
+so Arpit's theme, much the largest file at 3.0 MB, costs a visitor nothing
+unless they get past their rival. Which opponent brings which track is set
+by `Opponent.music`, defaulting to Arpit's. Switching crossfades over ~300 ms rather than cutting.
 
 > The earlier `pokemon-emerald-gba-soundtrack.zip` **could not be used.** It
 > contains `.minigsf` files: 146-byte stubs that index into a shared

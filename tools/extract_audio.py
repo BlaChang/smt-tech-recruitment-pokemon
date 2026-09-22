@@ -65,7 +65,8 @@ MUSIC_BITRATE = '96k'
 MUSIC = {
     'menu':   'departure',   # title, professor's lab, name entry, starter pick
     'gym':    'littleroot',  # every room of the gym
-    'battle': 'semifinal',   # Arpit
+    'rival':  'rival',       # Calista, Ritwin or Blake
+    'battle': 'semifinal',   # Arpit, and the default for any other fight
 }
 
 # 44100 -> 22050 is an exact 2:1 decimation, so no resampling filter is needed.
