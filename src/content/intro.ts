@@ -71,6 +71,11 @@ export const INTRO: Script = [
     as: PROF,
   },
   { setFlag: 'intro:types' },
+  { say: 'TD stands for tournament development, and they are the logistics team. ', as: PROF},
+  { say: 'They bring the tournament from a dream to reality through intense planning, emails, design, booking rooms, and setting deadlines for other teams to follow.', as: PROF },
+  { say: 'PW stands for Problem Writing.  The math tournament literally would not exist without them, as they write the high quality problems SMT is known for.', as: PROF },
+  { say: 'Last of all is Tech.  The hidden backbone and accelerator of the other two teams,',  as: PROF },
+  { say: 'making software that helps the online tournament possible and the in-person run on time.', as: PROF },
   {
     say: 'PW beats TD. TD beats TECH. TECH beats PW. Round and round, with no side on top.',
     as: PROF,
