@@ -2,6 +2,7 @@ import type { Input } from '../engine/input';
 import type { GameState } from '../state/gameState';
 import type { Application, Telemetry } from './telemetry';
 import { MORE_INFO } from '../content/links';
+import { externalUrl } from './externalUrl';
 
 interface Field {
   name: keyof Application;
@@ -135,7 +136,7 @@ export function openRegistry(deps: RegistryDeps): void {
     <p class="registry-sub">  We are looking for people to create some wacky ideas.  </p>
     <p class="registry-sub">  Leave ARPIT your email. Everything below it is optional and we do read it.</p>
     <p class="registry-sub">
-      <a class="registry-info" href="${MORE_INFO.url}" target="_blank" rel="noopener noreferrer"
+      <a class="registry-info" href="${externalUrl(MORE_INFO.url)}" target="_blank" rel="noopener noreferrer"
         >${MORE_INFO.label} ↗</a>
     </p>
     ${FIELDS.map(fieldHtml).join('')}

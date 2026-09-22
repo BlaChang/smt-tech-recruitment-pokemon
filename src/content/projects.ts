@@ -21,7 +21,13 @@ export interface Project {
   name: string;
   /** Shown on the plaque. Keep it to a sentence or two. */
   blurb: string;
-  /** Repo, demo or write-up. Empty means no link is offered. */
+  /**
+   * Repo, demo or write-up. Empty means no link is offered.
+   *
+   * A bare domain is fine -- "comp.mt" works. The scheme is added before the
+   * href is built, because without one the browser treats it as a path and
+   * navigates to /comp.mt on the gym's own origin instead of leaving.
+   */
   url: string;
 }
 
@@ -33,10 +39,10 @@ export const PROJECTS: Project[] = [
     url: 'comp.mt',
   },
   {
-    id: 'grading',
-    name: 'GRADING PIPELINE',
-    blurb: 'Tens of thousands of answers, scored and ranked before the closing ceremony.',
-    url: '',
+    id: 'puzzlehunt',
+    name: 'ONLINE PUZZLE HUNT',
+    blurb: 'Our online puzzle hunt from last year.  Made by the goat Arpit, even when he is a year graduated, just for the love of the game.',
+    url: 'puzzles.stanfordmathtournament.org',
   },
   {
     id: 'scoreboard',

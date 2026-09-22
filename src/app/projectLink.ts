@@ -1,3 +1,5 @@
+import { externalUrl } from './externalUrl';
+
 const ID = 'project-link';
 
 /**
@@ -10,11 +12,12 @@ const ID = 'project-link';
  */
 export function showProjectLink(name: string, url: string): void {
   clearProjectLink();
-  if (!url) return;
+  const href = externalUrl(url);
+  if (!href) return;
 
   const link = document.createElement('a');
   link.id = ID;
-  link.href = url;
+  link.href = href;
   link.target = '_blank';
   link.rel = 'noopener noreferrer';
   link.textContent = `Open ${name} ↗`;
