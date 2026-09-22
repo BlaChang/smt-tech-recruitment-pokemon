@@ -43,7 +43,12 @@ describe('submission goes through the server', () => {
 
 describe('the proxy itself', () => {
   /** Calls the handler with a body, returning the status and text. */
-  async function call(body: unknown, method = 'POST', env: Record<string, string> = {}) {
+  async function call(
+    body: unknown,
+    method = 'POST',
+    env: Record<string, string> = {},
+    url?: string,
+  ) {
     const mod = await import('../../api/submit');
     const prev = { ...process.env };
     Object.assign(process.env, { SHEETS_ENDPOINT: '', SUBMIT_TOKEN: '', ...env });
@@ -57,6 +62,7 @@ describe('the proxy itself', () => {
     };
     const req = {
       method,
+      url: url ?? '/api/submit',
       body: typeof body === 'string' ? body : JSON.stringify(body),
       headers: {},
       setEncoding() {},
@@ -148,6 +154,78 @@ describe('the proxy itself', () => {
     });
     const [, init] = fetchSpy.mock.calls[0] as unknown as [string, RequestInit];
     expect(JSON.parse(String(init.body)).token).toBe('sekrit');
+    vi.unstubAllGlobals();
+  });
+
+  it('names what Apps Script actually objected to', async () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const ENV = { SHEETS_ENDPOINT: 'https://example.com/exec', SUBMIT_TOKEN: 'sekrit' };
+    const cases: Array<[string, number, string]> = [
+      ['forbidden', 200, 'upstream refused: token-mismatch'],
+      ['error', 200, 'upstream refused: script-threw'],
+      ['<!DOCTYPE html><html>Sign in', 200, 'upstream refused: not-public'],
+      ['ok', 500, 'upstream refused: unexpected-500'],
+    ];
+    for (const [reply, status, expected] of cases) {
+      vi.stubGlobal('fetch', vi.fn(async () => new Response(reply, { status })));
+      expect((await call(GOOD, 'POST', ENV)).text, reply.slice(0, 20)).toBe(expected);
+      vi.unstubAllGlobals();
+    }
+    spy.mockRestore();
+  });
+
+  it("never echoes upstream's body back to the caller", async () => {
+    // A non-public script serves Google's sign-in HTML. The response must
+    // carry a verdict from our own fixed list, not that page.
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.stubGlobal('fetch', vi.fn(async () =>
+      new Response('<html>Sign in to continue. secret-looking-thing</html>', { status: 200 })));
+    const { text } = await call(GOOD, 'POST', {
+      SHEETS_ENDPOINT: 'https://example.com/exec', SUBMIT_TOKEN: 'sekrit',
+    });
+    expect(text).toBe('upstream refused: not-public');
+    expect(text).not.toMatch(/secret-looking-thing|html/);
+    vi.unstubAllGlobals();
+    spy.mockRestore();
+  });
+
+  it('probes upstream on request without writing a row', async () => {
+    const fetchSpy = vi.fn(async () => new Response('unknown kind', { status: 200 }));
+    vi.stubGlobal('fetch', fetchSpy);
+    const { status, text } = await call(
+      null,
+      'GET',
+      { SHEETS_ENDPOINT: 'https://example.com/exec', SUBMIT_TOKEN: 'sekrit' },
+      '/api/submit?check=upstream',
+    );
+    expect(status).toBe(200);
+    expect(JSON.parse(text).upstream).toBe('reachable');
+    // The probe must send a kind Code.gs does not handle, or it writes.
+    const [, init] = fetchSpy.mock.calls[0] as unknown as [string, RequestInit];
+    const sent = JSON.parse(String(init.body));
+    expect(sent.kind, 'the probe would have written a row').toBe('ping');
+    expect(sent.token).toBe('sekrit');
+    vi.unstubAllGlobals();
+  });
+
+  it('calls a token mismatch by its name when probing', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('forbidden', { status: 200 })));
+    const { text } = await call(
+      null, 'GET',
+      { SHEETS_ENDPOINT: 'https://example.com/exec', SUBMIT_TOKEN: 'wrong' },
+      '/api/submit?check=upstream',
+    );
+    expect(JSON.parse(text).upstream).toBe('token-mismatch');
+    vi.unstubAllGlobals();
+  });
+
+  it('does not touch the network on a plain health check', async () => {
+    const fetchSpy = vi.fn();
+    vi.stubGlobal('fetch', fetchSpy);
+    await call(null, 'GET', {
+      SHEETS_ENDPOINT: 'https://example.com/exec', SUBMIT_TOKEN: 'sekrit',
+    });
+    expect(fetchSpy).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
   });
 

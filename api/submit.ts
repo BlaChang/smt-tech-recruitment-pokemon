@@ -31,6 +31,7 @@
 /** Only the bits of the Node request and response this uses. */
 interface Req {
   method?: string;
+  url?: string;
   body?: unknown;
   headers: Record<string, string | string[] | undefined>;
   setEncoding(encoding: string): void;
@@ -53,6 +54,38 @@ const MAX_BODY = 64 * 1024;
  */
 const REQUIRED = ['SHEETS_ENDPOINT', 'SUBMIT_TOKEN'] as const;
 
+/**
+ * What Apps Script's reply means.
+ *
+ * server/Code.gs answers a bare word: 'ok' when a row was written,
+ * 'forbidden' when the token did not match, 'unknown kind' for a payload it
+ * does not handle, 'error' when it threw. Anything else is not our script
+ * talking -- most often Google's HTML sign-in page, which is what an
+ * undeployed or non-public web app serves.
+ */
+function classify(status: number, body: string): string {
+  const reply = body.trim();
+  if (status === 200 && reply === 'ok') return 'ok';
+  if (reply === 'forbidden') return 'token-mismatch';
+  if (reply === 'unknown kind') return 'reachable';
+  if (reply === 'error') return 'script-threw';
+  if (reply.startsWith('<') || reply.toLowerCase().includes('sign in')) return 'not-public';
+  return `unexpected-${status}`;
+}
+
+/** One sentence per classification, for a log a human is reading. */
+const ADVICE: Record<string, string> = {
+  'token-mismatch':
+    'SUBMIT_TOKEN in Vercel does not match SUBMIT_TOKEN in server/Code.gs.',
+  'script-threw':
+    'Apps Script threw. Usually SHEET_ID is still the placeholder, or the ' +
+    'account cannot open that sheet. Check the Apps Script execution log.',
+  'not-public':
+    'That URL served a sign-in page, not the script. Re-deploy the web app ' +
+    'with "Execute as: Me" and "Who has access: Anyone", and use the /exec ' +
+    'URL from that deployment.',
+};
+
 /** Funnel buckets currentStage() can produce, in src/app/telemetry.ts. */
 const STAGES = [
   'applied', 'beat-leader', 'beat-rival', 'cleared-panels',
@@ -70,8 +103,17 @@ export default async function handler(req: Req, res: Res): Promise<void> {
   if (req.method === 'GET') {
     const missing = REQUIRED.filter((name) => !process.env[name]);
     res.setHeader('Content-Type', 'application/json');
+
+    // ?check=upstream also asks Apps Script whether it is reachable and
+    // whether the token matches. It sends a payload Code.gs does not handle,
+    // so the answer costs a round trip and writes no row.
+    let upstream: string | undefined;
+    if (!missing.length && String(req.url ?? '').includes('check=upstream')) {
+      upstream = await pingUpstream();
+    }
+
     res.status(missing.length ? 503 : 200).send(
-      JSON.stringify({ configured: missing.length === 0, missing }),
+      JSON.stringify({ configured: missing.length === 0, missing, upstream }),
     );
     return;
   }
@@ -148,15 +190,44 @@ export default async function handler(req: Req, res: Res): Promise<void> {
       redirect: 'follow',
     });
     const text = (await upstream.text()).trim();
-    if (!upstream.ok || text !== 'ok') {
-      console.error(`[submit] apps script replied ${upstream.status}: ${text.slice(0, 200)}`);
-      res.status(502).send('upstream refused');
+    const verdict = classify(upstream.status, text);
+    if (verdict !== 'ok') {
+      console.error(
+        `[submit] apps script replied ${upstream.status} (${verdict}): ` +
+          `${text.slice(0, 200)}` +
+          (ADVICE[verdict] ? `\n  -> ${ADVICE[verdict]}` : ''),
+      );
+      // The verdict is a fixed word from the list above, not upstream's
+      // body, so this cannot echo a sign-in page back to a caller.
+      res.status(502).send(`upstream refused: ${verdict}`);
       return;
     }
     res.status(200).send('ok');
   } catch (err) {
     console.error('[submit] could not reach apps script', err);
     res.status(502).send('upstream unreachable');
+  }
+}
+
+/**
+ * Asks Apps Script whether it is there and whether the token matches.
+ *
+ * Deliberately sends a `kind` Code.gs does not handle: it checks the token
+ * first and only then looks at the kind, so a correct token comes back
+ * 'unknown kind' and a wrong one comes back 'forbidden' -- and neither
+ * writes to the sheet.
+ */
+async function pingUpstream(): Promise<string> {
+  try {
+    const reply = await fetch(process.env.SHEETS_ENDPOINT as string, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ kind: 'ping', token: process.env.SUBMIT_TOKEN }),
+      redirect: 'follow',
+    });
+    return classify(reply.status, await reply.text());
+  } catch {
+    return 'unreachable';
   }
 }
 

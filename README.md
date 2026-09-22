@@ -108,6 +108,21 @@ published in the page source. These are not.
 function, or lists the ones that are not — names only, never values. A `500`
 with the body `not configured` on a real submission means the same thing.
 
+**`GET /api/submit?check=upstream`** then checks Apps Script itself. It sends
+a payload `Code.gs` does not handle, so it costs one round trip and writes no
+row, and reports one of:
+
+| `upstream` | Meaning |
+| --- | --- |
+| `reachable` | script answered and the token matches — you are done |
+| `token-mismatch` | `SUBMIT_TOKEN` in Vercel ≠ `SUBMIT_TOKEN` in `Code.gs` |
+| `not-public` | that URL served a sign-in page; re-deploy the web app as "Execute as: Me", "Who has access: Anyone" and use its `/exec` URL |
+| `script-threw` | usually `SHEET_ID` is still the placeholder |
+| `unreachable` | the URL does not resolve at all |
+
+A real submission that fails now says which of these it was too:
+`upstream refused: token-mismatch`.
+
 Two things catch people out here:
 
 - **No `VITE_` prefix.** `VITE_SHEETS_ENDPOINT` is a different variable and
