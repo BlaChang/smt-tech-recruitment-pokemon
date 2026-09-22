@@ -37,7 +37,7 @@ export const NPC_SCALE: Script = [
   { say: 'Tournament day arithmetic: about a thousand students, eight rounds, tens of thousands of answers.', as: 'MISHA' },
   { say: 'All of it graded and ranked before the closing ceremony. Which is four hours later.', as: 'MISHA' },
   {
-    say: 'You cannot do that with a spreadsheet and optimism. We tried. It was a spreadhsheet hell *shudder*.  We should automate as much as we can',
+    say: 'You cannot do that with a spreadsheet and optimism. We tried. It was a spreadhsheet HELL.  Everything grading and awards related should be automated by next year.',
     as: 'MISHA',
   },
 ];

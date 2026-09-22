@@ -667,15 +667,53 @@ export class BattleScene implements Scene {
       r.rect(x + hx, y + hy, width, hh, hpColour(ratio), true);
     }
 
-    drawShadowText(r, mon.spec.name, x + 10, y + 6, '#3a3438', '#d8d8c0');
-    drawShadowText(r, mon.spec.type, x + meta.w - 28, y + 6, '#7a6a5a', '#d8d8c0');
+    this.drawNameAndType(r, mon, x, y, meta);
 
     if (showNumbers) {
       const label = `${Math.max(0, mon.hp)}/${mon.spec.maxHp}`;
       drawNumber(r, label, x + meta.w - 12 - numberWidth(label), y + hy + 7);
     }
   }
+
+  /**
+   * Name on the left of a databox, type hard against its right.
+   *
+   * Both are placed from the panel's measured interior (`textSpan`) rather
+   * than from the frame, because the two databoxes are inset by different
+   * amounts: the player's drawing starts 8px in, the foe's at 0. Laying out
+   * from the frame put BLOBHEART on top of the player panel's left border,
+   * and a fixed right offset sent the four-letter TECH out through the side
+   * of the foe's.
+   */
+  private drawNameAndType(
+    r: Renderer,
+    mon: MonState,
+    x: number,
+    y: number,
+    meta: { w: number; textSpan?: number[] },
+  ): void {
+    const [spanLeft, spanRight] = meta.textSpan ?? [0, meta.w];
+    const left = x + spanLeft + TEXT_PAD;
+    // One short of the interior: the shadow is drawn a pixel right of the text.
+    const right = x + spanRight - TEXT_PAD - 1;
+
+    const type = mon.spec.type;
+    const typeX = right - r.measure(type);
+    drawShadowText(r, type, typeX, y + 6, '#7a6a5a', '#d8d8c0');
+
+    // Names are authored to fit, but a long one must lose its tail rather
+    // than run under the type beside it.
+    let name = mon.spec.name;
+    const room = typeX - TEXT_GAP - left;
+    while (name.length > 1 && r.measure(name) > room) name = name.slice(0, -1);
+    drawShadowText(r, name, left, y + 6, '#3a3438', '#d8d8c0');
+  }
 }
+
+/** Clearance between the panel's drawn border and the text inside it. */
+const TEXT_PAD = 4;
+/** Smallest gap allowed between a name and the type to its right. */
+const TEXT_GAP = 4;
 
 /**
  * Matches the red band of the HP bar in hpColour, so the warning starts

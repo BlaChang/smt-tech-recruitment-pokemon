@@ -13,6 +13,8 @@ export const UI_ATLAS = UI as Record<
     glyph?: number;
     chars?: string;
     content?: number[];
+    /** [left, right) of the panel's drawn interior on its text rows. */
+    textSpan?: number[];
   }
 >;
 

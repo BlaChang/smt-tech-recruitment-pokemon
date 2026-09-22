@@ -181,8 +181,16 @@ halving is lossless rather than a resample.
 The one mismatch is width: Essentials panels are 256 wide, this screen is
 240. Rather than rescale by a non-integer factor and blur the pixels, the
 frames are **nine-sliced** at runtime — corners stay pixel-exact, middles
-stretch. Insets and the HP-bar rectangles live in `src/content/uiAtlas.json`,
-generated alongside the images so they cannot drift.
+stretch. Insets, HP-bar rectangles and each databox's `textSpan` live in
+`src/content/uiAtlas.json`, generated alongside the images so they cannot
+drift.
+
+`textSpan` is the leftmost and rightmost opaque pixel on the rows a databox
+writes its name and type on — its real interior. It is measured rather than
+assumed because the two panels are inset differently (the player's drawing
+starts 8px into its frame, the foe's at 0) and their corners are cut.
+Positioning from the frame instead put the player's name on top of its own
+left border and pushed a four-letter type out through the side of the foe's.
 
 Two adjustments the pack needs for this game:
 

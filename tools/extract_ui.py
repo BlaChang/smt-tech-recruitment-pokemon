@@ -130,6 +130,36 @@ def strip_cut_marker(img):
     return img.crop((0, 0, img.width, height)) if height < img.height else img
 
 
+# Rows (top, bottom) each panel draws its name and type on. The Emerald
+# databoxes are inset by different amounts and their corners are cut, so the
+# usable width is measured on those rows rather than assumed from the frame.
+TEXT_ROWS = {
+    'databoxPlayer': (3, 15),
+    'databoxFoe': (3, 15),
+}
+
+
+def text_span(img, rows):
+    """
+    Leftmost and rightmost opaque pixel across a band of rows.
+
+    This is the panel's real interior where text goes. Laying text out from
+    the frame's own edges instead put the player's name on top of its left
+    border and ran a four-letter type straight out the right-hand side.
+    """
+    px = img.convert('RGBA').load()
+    top, bottom = rows
+    left, right = img.width, -1
+    for y in range(top, min(bottom + 1, img.height)):
+        for x in range(img.width):
+            if px[x, y][3]:
+                left = min(left, x)
+                right = max(right, x)
+    if right < 0:
+        raise SystemExit(f'no opaque pixels on rows {rows}; check TEXT_ROWS')
+    return [left, right + 1]
+
+
 def build():
     from PIL import Image
 
@@ -150,6 +180,8 @@ def build():
             entry['inset'] = [l, r, t, b]
         if key in HP_RECTS:
             entry['hp'] = list(HP_RECTS[key])
+        if key in TEXT_ROWS:
+            entry['textSpan'] = text_span(img, TEXT_ROWS[key])
         if key == 'numbers':
             if img.width % len(GLYPHS):
                 raise SystemExit(f'numbers: {img.width}px does not divide into {len(GLYPHS)} glyphs')
@@ -183,7 +215,7 @@ def build():
         if 'inset' in entry:
             extra = f" nine-slice {entry['inset']}"
         if 'hp' in entry:
-            extra = f" hp bar at {entry['hp']}"
+            extra = f" hp bar at {entry['hp']}, text {entry.get('textSpan')}"
         if 'glyph' in entry:
             extra = f" {entry['glyph']}px glyphs"
         print(f"  {key:15s} {entry['w']:3d}x{entry['h']:<3d}{extra}")
