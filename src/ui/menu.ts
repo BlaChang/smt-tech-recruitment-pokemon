@@ -62,7 +62,9 @@ export class Menu {
       return { x: Math.round((VIEW_W - w) / 2), y: Math.round((VIEW_H - h) / 2), w, h };
     }
     if (this.anchor === 'lower-center') {
-      return { x: Math.round((VIEW_W - w) / 2), y: VIEW_H - h - 34, w, h };
+      // 44 leaves room under the menu for the title screen's three footer
+      // lines without any of them losing their descenders off the bottom.
+      return { x: Math.round((VIEW_W - w) / 2), y: VIEW_H - h - 44, w, h };
     }
     return { x: VIEW_W - w - 6, y: VIEW_H - 54 - h - 2, w, h };
   }

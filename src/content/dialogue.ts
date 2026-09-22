@@ -83,21 +83,21 @@ export const NPC_WACKY: Script = [
   { say: 'Between tournaments? We build stupid things. Gloriously stupid things.', as: 'RANDOM TECH MEMBER' },
   {
     say: 'Someone wrote a bot that renames the entire Discord. Someone made the scoreboard play a fanfare. Someone built this gym.',
-    as: 'RANDOM TECH MEMBER',
+    as: 'DILLON',
   },
   {
     say: 'Nobody asked for a single one of those. That is the filter, honestly. We want the people who build the thing nobody asked for.',
-    as: 'RANDOM TECH MEMBER',
+    as: 'DILLON',
   },
   {
     choice: ['I do that constantly', 'Seems inefficient'],
     branch: [
       [
-        { say: 'Then you are already one of us, {name}. Go beat ARPIT and make it official.', as: 'RANDOM TECH MEMBER' },
+        { say: 'Then you are already one of us, {name}. Go beat ARPIT and make it official.', as: 'DILLON' },
         { track: 'wacky:yes' },
       ],
       [
-        { say: 'Hah. Deeply. Efficiency is for the grading pipeline. This part is for us.', as: 'RANDOM TECH MEMBER' },
+        { say: 'Hah. Deeply. Efficiency is for the grading pipeline. This part is for us.', as: 'DILLON' },
         { track: 'wacky:no' },
       ],
     ],
