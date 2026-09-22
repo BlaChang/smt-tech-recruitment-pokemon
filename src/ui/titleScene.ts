@@ -4,15 +4,24 @@ import type { Renderer } from '../engine/renderer';
 import type { Scene } from '../engine/scenes';
 import { audio } from '../engine/audio';
 import { Menu } from './menu';
-import { drawTiny, measureTiny, TINY_HEIGHT } from './tinyFont';
 
-/** Uppercase because the 3x5 face has no lowercase; see tinyFont.ts. */
-const DISCLAIMER = 'TOTALLY NOT A RIPOFF OF POKEMON EMERALD';
-
-/** Footer rows. The last is measured from the bottom so nothing clips off. */
-const CONTROLS_Y = 122;
-const SOUND_Y = 136;
-const FINE_PRINT_Y = VIEW_H - TINY_HEIGHT - 4;
+/**
+ * Footer rows, stacked to the bottom edge.
+ *
+ * 148 is as low as the last line goes: the font cell is 15px tall and sits
+ * 3px above the baseline anchor, so 148 puts its descenders exactly on 160.
+ *
+ * The disclaimer cannot be made smaller than the lines above it. The
+ * Emerald font has one crisp size -- it is a pixel face that only
+ * rasterises cleanly at 15, so `size` only ever picks a whole multiple of
+ * it, and anything under 13 is the same scale 1. A separate smaller face
+ * does not work either: below five columns a glyph has no centre column,
+ * and M, N and W become mutually unreadable. It reads as fine print by
+ * being last and dim instead.
+ */
+const CONTROLS_Y = 120;
+const SOUND_Y = 134;
+const DISCLAIMER_Y = 148;
 
 export interface TitleDeps {
   hasSave: boolean;
@@ -55,10 +64,9 @@ export class TitleScene implements Scene {
       r.textCentered('Arrows to Move, Space to talk', VIEW_W / 2, CONTROLS_Y, '#4e5680', 8, true);
     }
     r.textCentered('Turn on sound for the full experience', VIEW_W / 2, SOUND_Y, '#8f9ad0', 8, true);
-
-    // Fine print, in the 3x5 face: the Emerald font has one crisp size and
-    // this has to sit under a line already written in it.
-    const w = measureTiny(DISCLAIMER);
-    drawTiny(r.ctx, DISCLAIMER, Math.round((VIEW_W - w) / 2), FINE_PRINT_Y, '#4a4f74');
+    r.textCentered(
+      'totally not a ripoff of Pokemon Emerald',
+      VIEW_W / 2, DISCLAIMER_Y, '#3f4668', 8, true,
+    );
   }
 }
