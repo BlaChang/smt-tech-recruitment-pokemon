@@ -3,7 +3,7 @@
 A browser RPG that recruits for the Stanford Math Tournament team. Instead of a
 Google Form and a stale doc, a candidate meets Professor SymmeTREE, picks a
 partner, walks a gym full of people explaining what SMT actually is, solves a
-Lights Out floor, beats gym leader Arpit Ransaria, and only then gets to leave
+Lights Out floor, beats gym leader Arpit Ranasaria, and only then gets to leave
 an email. Finishing *is* the filter.
 
 ## Run it
@@ -60,7 +60,7 @@ whichever room you are standing in, so you never see the void between them.
 | Panel room | 3x3 Lights Out on floor buttons; the door north stays shut until all nine are lit |
 | Hall of Fame | Six displays, one per shipped project, each able to link out |
 | Rival room | Your rival, chosen by your starter; the door north stays shut until you win |
-| Arena | Arpit Ransaria |
+| Arena | Arpit Ranasaria |
 
 Rooms are authored as blocks of text in `src/world/maps/rooms.ts` and stamped
 into one grid at load. Corners use `{}[]` for the 45-degree cuts that make

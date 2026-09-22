@@ -240,7 +240,7 @@ function leaderChallenge(): Script {
   return [
     { say: 'So the floor let you through, huh?  Perhaps you are worth my time then.', as: 'ARPIT' },
     {
-      say: 'ARPIT RANSARIA. I brought this tournament back from the dead after COVID and helped scale it to serve over two thousand people, with volunteers, including online',
+      say: 'ARPIT RANASARIA. I brought this tournament back from the dead after COVID and helped scale it to serve over two thousand people, with volunteers, including online',
       as: 'ARPIT',
     },
     {
