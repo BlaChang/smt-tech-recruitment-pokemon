@@ -205,12 +205,21 @@ regenerating placeholders can never overwrite real art.
 Art already at 64x64 with real transparency and its content resting on the
 bottom edge is **copied through untouched** -- rescaling and re-hardening
 hand-made pixel art can only lose pixels that were placed deliberately.
+Art already drawn at 64x64 with real transparency is never keyed, rescaled
+or re-hardened -- each of those can only lose pixels the artist placed on
+purpose. The most it gets is a whole-pixel slide down onto the bottom edge,
+so nothing hovers above its platform.
+
 Anything else (a photo, an oversized drawing) is keyed, trimmed, fitted and
 bottom-aligned.
 
+BlobHeart began as a photo; that original is kept at
+`art-source/blobheart-photo.{png,jpg}`, outside `mons/` so the importer
+does not treat it as a second creature.
+
 | Mon | Art |
 | --- | --- |
-| blobheart | photo, downscaled and keyed from `art-source/mons/blobheart.png` |
+| blobheart | pixel art at target size, used verbatim |
 | francis | pixel art at target size, used verbatim |
 | goose | pixel art at target size, used verbatim |
 | maytrix, pieuler | generated placeholder |

@@ -103,30 +103,48 @@ def shrink(Image, img, size):
     return out
 
 
-def already_conformant(img):
+def drawn_at_target_size(img):
     """
-    True when the source is already exactly what the game wants: the right
-    frame size, real transparency, and content resting on the bottom edge.
+    True when the artist already worked at the game's own frame size with
+    real transparency.
 
-    Hand-drawn art at target size is better left alone -- keying, rescaling
-    and re-hardening it can only lose pixels the artist placed deliberately.
+    Such art is never keyed, rescaled or re-hardened: every one of those
+    steps can only lose pixels that were placed deliberately. The most it
+    ever needs is to be slid down onto the bottom edge, which is exact.
     """
-    if img.mode != 'RGBA' or img.size != (FRAME, FRAME):
-        return False
+    return img.mode == 'RGBA' and img.size == (FRAME, FRAME) and img.getbbox() is not None
+
+
+def sit_on_bottom_edge(Image, img):
+    """
+    Drops the drawing onto the bottom of its frame.
+
+    Empty rows under the feet read in-game as the creature hovering above
+    its platform. Moving it is a whole-pixel translation, so nothing is
+    resampled and nothing is lost.
+    """
     box = img.getbbox()
-    return box is not None and box[3] == FRAME
+    gap = FRAME - box[3]
+    if gap == 0:
+        return img, 0
+    out = Image.new('RGBA', (FRAME, FRAME), (0, 0, 0, 0))
+    out.paste(img.crop((0, 0, FRAME, box[3])), (0, gap))
+    return out, gap
 
 
 def convert(Image, path, name):
     src = Image.open(path)
     original = src.size
 
-    if already_conformant(src):
-        src.save(os.path.join(OUT_DIR, f"{name}.png"))
+    if drawn_at_target_size(src):
+        src, gap = sit_on_bottom_edge(Image, src)
         box = src.getbbox()
+        where = 'copied as-is' if gap == 0 else f'lowered {gap}px onto the bottom edge'
+        os.makedirs(OUT_DIR, exist_ok=True)
+        src.save(os.path.join(OUT_DIR, f"{name}.png"))
         print(
-            f'{name}: already {FRAME}x{FRAME} with its feet on the bottom edge; '
-            f'copied as-is ({box[2] - box[0]}x{box[3] - box[1]} of content)'
+            f'{name}: already drawn at {FRAME}x{FRAME}; {where} '
+            f'({box[2] - box[0]}x{box[3] - box[1]} of content)'
         )
         return
     img = key_out(src, background_colour(src.convert('RGB')))
