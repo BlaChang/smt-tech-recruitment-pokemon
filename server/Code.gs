@@ -4,16 +4,21 @@
  * SETUP
  *  1. Create a Google Sheet. Copy its ID from the URL and paste it below.
  *  2. script.google.com > New project > paste this file in.
- *  3. Set SUBMIT_TOKEN to the same value as VITE_SUBMIT_TOKEN in .env.local.
+ *  3. Set SUBMIT_TOKEN to the same value as SUBMIT_TOKEN in Vercel's
+ *     environment variables. Note: no VITE_ prefix. The game never sees this
+ *     token -- api/submit.ts attaches it server-side -- so it is not visible
+ *     in the page source and can be rotated without a rebuild.
  *  4. Deploy > New deployment > type "Web app".
  *       Execute as:      Me
  *       Who has access:  Anyone
- *  5. Copy the /exec URL into VITE_SHEETS_ENDPOINT in .env.local.
+ *  5. Copy the /exec URL into SHEETS_ENDPOINT in Vercel's environment
+ *     variables.
  *  6. Re-deploy (new version) after ANY edit to this file. Apps Script serves
  *     the last deployed version, not the last saved one.
  *
- * The game posts text/plain on purpose: it dodges the CORS preflight that
- * Apps Script cannot answer.
+ * Requests arrive from api/submit.ts rather than from a browser, so CORS
+ * does not apply; the text/plain content type is kept because it is what
+ * Apps Script is happiest with.
  */
 
 var SHEET_ID = 'PASTE_YOUR_SHEET_ID_HERE';

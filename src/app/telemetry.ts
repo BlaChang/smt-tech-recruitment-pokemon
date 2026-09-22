@@ -1,5 +1,5 @@
 import { npcsTalkedTo, puzzlesSolved, type GameState } from '../state/gameState';
-import { hasEndpoint, SHEETS_ENDPOINT, SUBMIT_TOKEN } from './config';
+import { hasEndpoint, SUBMIT_URL } from './config';
 
 export interface Application {
   email: string;
@@ -82,7 +82,6 @@ export class Telemetry {
   async submitApplication(application: Application): Promise<boolean> {
     const payload = {
       kind: 'application',
-      token: SUBMIT_TOKEN,
       application,
       telemetry: this.snapshot(),
     };
@@ -93,10 +92,11 @@ export class Telemetry {
     }
 
     try {
-      // text/plain dodges the CORS preflight that Apps Script cannot answer.
-      const res = await fetch(SHEETS_ENDPOINT, {
+      // Same origin, so no preflight to dodge and no token to carry: the
+      // function on the other side attaches it.
+      const res = await fetch(SUBMIT_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
         redirect: 'follow',
       });
@@ -119,11 +119,12 @@ export class Telemetry {
       if (state.applied) return;
       const payload = JSON.stringify({
         kind: 'abandoned',
-        token: SUBMIT_TOKEN,
         telemetry: this.snapshot(),
       });
       try {
-        navigator.sendBeacon(SHEETS_ENDPOINT, new Blob([payload], { type: 'text/plain;charset=utf-8' }));
+        // sendBeacon cannot set headers, so this arrives as text/plain and
+        // the function parses the raw body.
+        navigator.sendBeacon(SUBMIT_URL, new Blob([payload], { type: 'text/plain;charset=utf-8' }));
       } catch {
         /* nothing useful to do during unload */
       }

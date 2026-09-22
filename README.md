@@ -87,13 +87,35 @@ pitch never means touching the engine. `{name}` interpolates the nickname.
 
 ## Collecting applications
 
-1. Follow the setup comment at the top of `server/Code.gs`.
-2. Copy `.env.example` to `.env.local` and fill in:
-   - `VITE_SHEETS_ENDPOINT` — the Apps Script `/exec` URL
-   - `VITE_SUBMIT_TOKEN` — must match `SUBMIT_TOKEN` in `Code.gs`
+The browser posts to `/api/submit` on its own origin. That is a Vercel
+serverless function (`api/submit.ts`) which holds the Apps Script URL and the
+shared token and forwards the payload. Vercel deploys anything under `/api`
+even though the rest of this is a static build, so there is no server to run.
 
-With no endpoint set, submissions log to the console, so dev never needs the
-real sheet.
+Both values are read at request time from **plain environment variables, with
+no `VITE_` prefix**. That prefix is the whole point: Vite substitutes
+`VITE_*` into the bundle at build time, so anything named that way is
+published in the page source. These are not.
+
+1. Follow the setup comment at the top of `server/Code.gs`.
+2. In Vercel → Project → Settings → Environment Variables, set:
+   - `SHEETS_ENDPOINT` — the Apps Script `/exec` URL
+   - `SUBMIT_TOKEN` — must match `SUBMIT_TOKEN` in `Code.gs`
+3. Deploy. Nothing goes in `.env.local` for production.
+
+`npm run dev` has no `/api` behind it, so submissions log to the console and
+local work never touches the real sheet. To exercise the real path, run
+`vercel dev` (which does serve the function) with `VITE_SUBMIT_URL=/api/submit`
+set, or point `VITE_SUBMIT_URL` straight at Apps Script.
+
+What the proxy is worth, stated honestly: the sheet's URL and token are no
+longer readable in the page, so nobody can write to the sheet directly or
+find out where it is, and the token can be rotated without rebuilding. But
+`/api/submit` is itself public and unauthenticated — a narrower door, not a
+locked one. It rejects non-POSTs, unknown payload kinds, bodies over 64 KB
+and applications without a usable email, and it discards any token a caller
+sends rather than passing it through. The `SUBMIT_TOKEN` check in `Code.gs`
+stays as a second gate.
 
 Two sheets get written: `applications`, and `abandoned` for people who closed
 the tab without finishing. Because the gym is hard-gated, that second sheet is
