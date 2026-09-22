@@ -36,7 +36,7 @@ export const PROJECTS: Project[] = [
     id: 'registration',
     name: 'COMP',
     blurb: 'Hundreds of teams sign up through it, every one of them wanting a different thing or being very dumb when using it.  It supports both our in-person and online competition and also is where students take their test.',
-    url: 'comp.mt',
+    url: '',
   },
   {
     id: 'puzzlehunt',
@@ -45,15 +45,15 @@ export const PROJECTS: Project[] = [
     url: 'puzzles.stanfordmathtournament.org',
   },
   {
-    id: 'scoreboard',
+    id: 'compose',
     name: 'COMPOSE',
-    blurb: 'How do our problem writers organize their problems, make sure they are the highest quality, move them around in tests, or ',
+    blurb: 'How do our problem writers organize their problems, make sure they are the highest quality, move them around between tests, all while keeping track of solutions, answers, and edits?  Once upon a time it was google docs.  Then later it was a github repo.  But the ultimate solution we came up with was COMPOSE',
     url: '',
   },
   {
-    id: 'scanner',
+    id: 'voluntold',
     name: 'VOLUNTOLD',
-    blurb: 'It reads ten thousand handwritten sheets. It has strong opinions about sevens.',
+    blurb: 'It has an mcp server that admins can use to assign volunteers.  It provides clocks that can synchronize every room.',
     url: '',
   },
   {
