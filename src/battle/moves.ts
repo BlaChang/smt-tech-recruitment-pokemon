@@ -108,11 +108,11 @@ export const MOVES: Record<string, Move> = {
   },
   mergeConflict: {
     id: 'mergeConflict',
-    name: 'MERGE CLASH',
+    name: 'CLAUDE',
     power: 26,
     accuracy: 1,
     effect: 'none',
-    flavor: 'Both sides insist they are correct.',
+    flavor: 'Cooked for 5m and 30sec',
   },
   hotfix: {
     id: 'hotfix',
@@ -124,7 +124,7 @@ export const MOVES: Record<string, Move> = {
   },
   pushToMain: {
     id: 'pushToMain',
-    name: 'PUSH TO MAIN',
+    name: 'FORCE PUSH',
     power: 46,
     accuracy: 0.85,
     effect: 'recoil',

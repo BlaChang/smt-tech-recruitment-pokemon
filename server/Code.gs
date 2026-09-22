@@ -19,10 +19,18 @@
 var SHEET_ID = 'PASTE_YOUR_SHEET_ID_HERE';
 var SUBMIT_TOKEN = 'change-me';
 
+/**
+ * Column order. appendRow below must match this exactly.
+ *
+ * NOTE: headers are only written when the sheet is first created. If you have
+ * already collected rows and then change this list, delete the sheet tab (or
+ * rename it) so it is rebuilt -- otherwise new rows land under the old
+ * headings, shifted by one.
+ */
 var APPLICATION_HEADERS = [
-  'timestamp', 'email', 'name', 'nickname', 'year', 'link', 'builtWhat',
-  'starter', 'minutesPlayed', 'npcsTalkedTo', 'puzzleMoves', 'puzzleSolvedSec',
-  'battleTurns', 'mathAttempts', 'sessionId', 'events',
+  'timestamp', 'email', 'name', 'nickname', 'year', 'knowsAlready', 'link',
+  'builtWhat', 'starter', 'minutesPlayed', 'npcsTalkedTo', 'puzzleMoves',
+  'puzzleSolvedSec', 'battleTurns', 'mathAttempts', 'sessionId', 'events',
 ];
 
 var ABANDONED_HEADERS = [
@@ -63,6 +71,7 @@ function appendApplication(body) {
     app.name || '',
     t.playerName || '',
     app.year || '',
+    app.experience || '',
     app.link || '',
     app.built || '',
     t.starter || '',
@@ -116,7 +125,10 @@ function minutes(ms) {
 /** Run this once from the editor to confirm the sheet wiring works. */
 function testAppend() {
   appendApplication({
-    application: { email: 'test@stanford.edu', name: 'Test', year: '', link: '', built: '' },
+    application: {
+      email: 'test@stanford.edu', name: 'Test', year: 'Frosh',
+      experience: 'some Python', link: '', built: '',
+    },
     telemetry: { playerName: 'TEST', starter: 'francis', msElapsed: 540000, npcsTalkedTo: ['greeter'],
       puzzleMoves: 9, puzzleSolvedMs: 240000, battleTurns: 12, mathAttempts: 1,
       sessionId: 'local-test', events: ['0s session:started'] },

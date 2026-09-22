@@ -119,7 +119,8 @@ html, body {
 .registry label em { opacity: 0.5; font-style: normal; }
 
 .registry input,
-.registry textarea {
+.registry textarea,
+.registry select {
   font: inherit;
   font-size: 1em;
   color: var(--ink);
@@ -130,8 +131,16 @@ html, body {
   resize: vertical;
 }
 
+/* Native dropdowns ignore the colours above on some platforms; setting them
+   on the options too keeps the open list dark rather than system-white. */
+.registry select option {
+  color: var(--ink);
+  background: #191d2e;
+}
+
 .registry input:focus,
-.registry textarea:focus {
+.registry textarea:focus,
+.registry select:focus {
   outline: none;
   border-color: #ffd45e;
 }

@@ -5,11 +5,26 @@ import type { Application, Telemetry } from './telemetry';
 interface Field {
   name: keyof Application;
   label: string;
-  type: 'text' | 'email' | 'textarea';
+  type: 'text' | 'email' | 'textarea' | 'select';
   placeholder: string;
   required: boolean;
   maxLength: number;
+  /** For `select` only: the choices, in order. */
+  options?: readonly string[];
 }
+
+/**
+ * Year options. Kept as a fixed list so the sheet column can be sorted and
+ * counted -- free text gave "frosh", "1st year", "freshman" and "Frosh (gap
+ * year)" for the same answer.
+ */
+export const YEARS = [
+  'Frosh',
+  'Sophomore',
+  'Junior',
+  'Senior',
+  'Grad student',
+] as const;
 
 const FIELDS: Field[] = [
   {
@@ -23,11 +38,20 @@ const FIELDS: Field[] = [
   { name: 'name', label: 'Your actual name', type: 'text', placeholder: '', required: true, maxLength: 80 },
   {
     name: 'year',
-    label: 'Year + what you already know',
-    type: 'text',
-    placeholder: 'Frosh, some Python, zero web',
+    label: 'Year',
+    type: 'select',
+    placeholder: 'Pick one',
     required: false,
-    maxLength: 160,
+    maxLength: 20,
+    options: YEARS,
+  },
+  {
+    name: 'experience',
+    label: 'What you already know',
+    type: 'textarea',
+    placeholder: 'Some Python, zero web. "Nothing yet" is a real answer.',
+    required: false,
+    maxLength: 400,
   },
   {
     name: 'link',
@@ -137,10 +161,21 @@ export function openRegistry(deps: RegistryDeps): void {
 
 function fieldHtml(field: Field): string {
   const id = `registry-${field.name}`;
-  const control =
-    field.type === 'textarea'
-      ? `<textarea id="${id}" name="${field.name}" rows="3" maxlength="${field.maxLength}" placeholder="${field.placeholder}"></textarea>`
-      : `<input id="${id}" name="${field.name}" type="${field.type}" maxlength="${field.maxLength}" placeholder="${field.placeholder}" />`;
+  const rows = field.name === 'experience' ? 2 : 3;
+  let control: string;
+  if (field.type === 'select') {
+    // Blank first, and selected, so an optional dropdown does not quietly
+    // answer itself with whatever happens to be at the top of the list.
+    const options = [
+      `<option value="" selected>${field.placeholder}</option>`,
+      ...(field.options ?? []).map((o) => `<option value="${o}">${o}</option>`),
+    ].join('');
+    control = `<select id="${id}" name="${field.name}">${options}</select>`;
+  } else if (field.type === 'textarea') {
+    control = `<textarea id="${id}" name="${field.name}" rows="${rows}" maxlength="${field.maxLength}" placeholder="${field.placeholder}"></textarea>`;
+  } else {
+    control = `<input id="${id}" name="${field.name}" type="${field.type}" maxlength="${field.maxLength}" placeholder="${field.placeholder}" />`;
+  }
   return `<label for="${id}">${field.label}${field.required ? '' : ' <em>(optional)</em>'}</label>${control}`;
 }
 
@@ -150,5 +185,11 @@ export function validate(application: Application): string | null {
     if (field.required && !application[field.name]) return `${field.label} is required.`;
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(application.email)) return 'That email does not look right.';
+  // Blank is fine -- the dropdown starts there and the field is optional --
+  // but anything else must be one of ours, or the sheet column stops being
+  // countable and we would not notice until someone tried to sort it.
+  if (application.year && !(YEARS as readonly string[]).includes(application.year)) {
+    return 'Pick a year from the list.';
+  }
   return null;
 }

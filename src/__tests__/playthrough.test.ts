@@ -12,6 +12,7 @@ import { createGameState } from '../state/gameState';
 import { gymMap, PLAYER_SPAWN } from '../world/maps/gym';
 import { ROOMS, roomAt, WARPS } from '../world/maps/rooms';
 import { NPCS } from '../content/npcs';
+import { YEARS } from '../app/registry';
 import { STARTERS } from '../battle/teams';
 import { rivalFor } from '../battle/rivals';
 import { solve } from '../puzzle/lightsOut';
@@ -507,12 +508,28 @@ describe('full playthrough', () => {
     const form = h.overlay.querySelector('form');
     expect(form, 'the registry never opened').not.toBeNull();
     const set = (name: string, value: string): void => {
-      const f = form?.querySelector<HTMLInputElement | HTMLTextAreaElement>(`[name=${name}]`);
+      const f = form?.querySelector<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(
+        `[name=${name}]`,
+      );
       if (f) f.value = value;
     };
     expect(form?.querySelector<HTMLInputElement>('[name=name]')?.value).toBe('ADA');
+
+    // Year is a dropdown, and it must start blank: it is optional, so an
+    // untouched form should not report whatever sits first in the list.
+    const year = form?.querySelector<HTMLSelectElement>('select[name=year]');
+    expect(year, 'year is not a dropdown').not.toBeNull();
+    expect(year?.value, 'the dropdown answered itself').toBe('');
+    expect([...(year?.options ?? [])].map((o) => o.value)).toEqual([
+      '', ...YEARS,
+    ]);
+    // And what you know is its own question, not part of the year.
+    expect(form?.querySelector('[name=experience]'), 'no experience field').not.toBeNull();
+
     set('email', 'ada@stanford.edu');
     set('name', 'Ada Lovelace');
+    set('year', 'Sophomore');
+    set('experience', 'some Python, zero web');
     form?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     for (let i = 0; i < 20 && !h.state.applied; i++) await Promise.resolve();
 
@@ -521,6 +538,7 @@ describe('full playthrough', () => {
     const saved = JSON.parse(localStorage.getItem('smt-tech-gym:save:v3') ?? '{}');
     expect(saved.applied).toBe(true);
     expect(saved.battleWon).toBe(true);
+    expect(year?.value, 'the year selection did not stick').toBe('Sophomore');
   }, 60000);
 });
 

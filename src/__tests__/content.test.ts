@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { validate } from '../app/registry';
+import { validate, YEARS } from '../app/registry';
 import { paginate } from '../ui/textbox';
 import type { Renderer } from '../engine/renderer';
 import { currentStage } from '../app/telemetry';
@@ -10,6 +10,7 @@ describe('registry validation', () => {
     email: 'ada@stanford.edu',
     name: 'Ada',
     year: '',
+    experience: '',
     link: '',
     built: '',
   };
@@ -25,6 +26,27 @@ describe('registry validation', () => {
 
   it('rejects a malformed email', () => {
     expect(validate({ ...good, email: 'ada@stanford' })).toMatch(/email/i);
+  });
+
+  it('accepts every year on the dropdown', () => {
+    for (const year of YEARS) expect(validate({ ...good, year }), year).toBeNull();
+  });
+
+  it('accepts no year at all, since it is optional', () => {
+    expect(validate({ ...good, year: '' })).toBeNull();
+  });
+
+  it('rejects a year that is not on the dropdown', () => {
+    // Only reachable by editing the DOM, but the sheet column is meant to be
+    // countable, and a stray "freshman" in it is not noticed until sort time.
+    expect(validate({ ...good, year: 'freshman' })).toMatch(/year/i);
+  });
+
+  it('keeps what you know separate from which year you are', () => {
+    // These used to share one free-text box, which made both unsortable.
+    const filled = { ...good, year: 'Frosh', experience: 'some Python, zero web' };
+    expect(validate(filled)).toBeNull();
+    expect(filled.year).not.toContain('Python');
   });
 });
 

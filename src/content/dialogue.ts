@@ -25,7 +25,7 @@ export const GREETER: Script = [
         as: 'FRONT DESK',
       },
       {
-        say: 'Talk to everyone on your way up. They have all been waiting months for someone new to explain their job to.',
+        say: 'Talk to everyone on your way up. They have all happy to explain their job.',
         as: 'FRONT DESK',
       },
     ],
