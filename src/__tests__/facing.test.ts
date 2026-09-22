@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { facesAway } from '../battle/facing';
 import { LEADER_TEAM, STARTERS, type MonSpec } from '../battle/teams';
+import { MON_KEYS } from '../content/assetManifest';
 import { rivalFor, rivalTeam } from '../battle/rivals';
 
 const ALL: MonSpec[] = [...STARTERS, ...LEADER_TEAM];
@@ -35,6 +36,19 @@ describe('which way a mon looks', () => {
       const copy = rivalTeam(rivalFor(starter.id))[0];
       const original = STARTERS.find((s) => s.id === copy.id);
       expect(copy.faces, `${copy.name} lost its facing`).toBe(original?.faces);
+    }
+  });
+});
+
+describe('every mon has art', () => {
+  it('fetches a sprite for each one a team can field', () => {
+    // Without a manifest entry a mon still "works": it renders as a
+    // coloured rectangle with its name on it, which is easy to miss.
+    for (const spec of ALL) {
+      expect(
+        (MON_KEYS as readonly string[]).includes(spec.id),
+        `${spec.name} is never fetched: add "${spec.id}" to MON_KEYS`,
+      ).toBe(true);
     }
   });
 });

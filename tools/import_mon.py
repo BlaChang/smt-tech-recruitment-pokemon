@@ -12,12 +12,14 @@ bottom-aligns it, writing the result to public/assets/mons/.
 Bottom alignment matters: the battle scene plants sprites feet-on-platform,
 so empty rows under the feet show up in-game as the creature hovering.
 """
+import json
 import os
 import sys
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), '..'))
 SRC_DIR = os.path.join(ROOT, 'art-source', 'mons')
 OUT_DIR = os.path.join(ROOT, 'public', 'assets', 'mons')
+ATLAS = os.path.join(ROOT, 'src', 'content', 'monAtlas.json')
 
 FRAME = 64
 # How far a pixel may sit from the sampled background colour and still count
@@ -132,6 +134,20 @@ def sit_on_bottom_edge(Image, img):
     return out, gap
 
 
+def has_own_transparency(img):
+    """
+    True when the art arrives already cut out against a real alpha channel.
+
+    Keying such a file is worse than pointless. The backdrop colour is
+    sampled from the corners, and transparent corners decode to black, so
+    keying would eat the darkest pixels of the drawing and leave the
+    background exactly where it was.
+    """
+    if img.mode not in ('RGBA', 'LA', 'PA'):
+        return False
+    return img.convert('RGBA').getchannel('A').getextrema()[0] == 0
+
+
 def convert(Image, path, name):
     src = Image.open(path)
     original = src.size
@@ -140,14 +156,16 @@ def convert(Image, path, name):
         src, gap = sit_on_bottom_edge(Image, src)
         box = src.getbbox()
         where = 'copied as-is' if gap == 0 else f'lowered {gap}px onto the bottom edge'
-        os.makedirs(OUT_DIR, exist_ok=True)
-        src.save(os.path.join(OUT_DIR, f"{name}.png"))
+        emit(src, name)
         print(
             f'{name}: already drawn at {FRAME}x{FRAME}; {where} '
             f'({box[2] - box[0]}x{box[3] - box[1]} of content)'
         )
         return
-    img = key_out(src, background_colour(src.convert('RGB')))
+    if has_own_transparency(src):
+        img = src.convert('RGBA')
+    else:
+        img = key_out(src, background_colour(src.convert('RGB')))
 
     box = img.getbbox()
     if box is None:
@@ -168,12 +186,32 @@ def convert(Image, path, name):
     out = Image.new('RGBA', (FRAME, FRAME), (0, 0, 0, 0))
     out.paste(img, ((FRAME - img.width) // 2, FRAME - img.height), img)
 
-    os.makedirs(OUT_DIR, exist_ok=True)
-    out.save(os.path.join(OUT_DIR, f'{name}.png'))
+    emit(out, name)
     print(
         f'{name}: {original[0]}x{original[1]} -> {img.width}x{img.height} '
         f'placed bottom-centre in {FRAME}x{FRAME}'
     )
+
+
+def emit(img, name):
+    """
+    Writes the sprite and records where its drawing actually sits.
+
+    Every sprite is the same 64x64 frame, but what is drawn inside varies a
+    lot -- PI & EULER fill 45 rows, TESS ELATION fills all 64. Anything the
+    game draws *around* a mon needs the real extent, or it frames empty air.
+    """
+    os.makedirs(OUT_DIR, exist_ok=True)
+    img.save(os.path.join(OUT_DIR, f'{name}.png'))
+
+    boxes = {}
+    if os.path.exists(ATLAS):
+        with open(ATLAS) as f:
+            boxes = json.load(f)
+    boxes[name] = list(img.getbbox() or (0, 0, FRAME, FRAME))
+    with open(ATLAS, 'w') as f:
+        json.dump(dict(sorted(boxes.items())), f, indent=2)
+        f.write('\n')
 
 
 def sources():

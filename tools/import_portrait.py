@@ -22,6 +22,13 @@ PORTRAITS = {
     # 60 is the tallest that clears the starter line-up standing on the
     # lab floor (y 58) without being clipped by the top of the screen.
     'portraitProfessor': ('justin.png', 60),
+    # Trainers, shown on the field before they send anything out. The foe's
+    # feet line is only 64px down the screen, so anything taller than this
+    # has its head cut off by the top edge -- see TRAINER_BOTTOM.
+    'trainerCalista': ('calista.png', 58),
+    'trainerRitwin': ('ritwin.png', 58),
+    'trainerBlake': ('blake.png', 58),
+    'trainerArpit': ('arpit.png', 58),
 }
 
 # Alpha below this is treated as background, which keeps the cutout crisp.

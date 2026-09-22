@@ -284,7 +284,13 @@ export class Overworld implements Scene {
   private startRivalBattle(): void {
     const rival = rivalFor(this.deps.state.starter);
     this.pushBattle(
-      { name: rival.name, team: rivalTeam(rival), music: 'rival' },
+      {
+        name: rival.name,
+        team: rivalTeam(rival),
+        music: 'rival',
+        portrait: rival.portrait,
+        challenge: `${rival.name} wants to battle!`,
+      },
       (won) => {
         if (!won) return;
         setFlag(this.deps.state, 'rival:beaten');

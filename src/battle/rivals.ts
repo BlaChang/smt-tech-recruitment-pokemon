@@ -15,6 +15,8 @@ export interface Rival {
   name: string;
   /** Overworld sprite slot; see tools/extract_overworld.py. */
   sprite: string;
+  /** UI slot for the photo shown on the battlefield before they send out. */
+  portrait: string;
   /** The starter they field against you. */
   monId: string;
   /** Said before the battle. */
@@ -29,6 +31,7 @@ export const RIVALS: Record<string, Rival> = {
     id: 'calista',
     name: 'CALISTA',
     sprite: 'rivalCalista',
+    portrait: 'trainerCalista',
     monId: 'goose',
     taunt: 'You took the penguin? Then you already know what beats it.',
     defeated: 'Huh. You out-shipped me. I want a rematch after the tournament.',
@@ -37,6 +40,7 @@ export const RIVALS: Record<string, Rival> = {
     id: 'ritwin',
     name: 'RITWIN',
     sprite: 'rivalRitwin',
+    portrait: 'trainerRitwin',
     monId: 'blobheart',
     taunt: 'A seagull. Bold. My red panda writes the problems your seagull announces.',
     defeated: 'Fine, fine. You earned that one. Go get the badge.',
@@ -45,6 +49,7 @@ export const RIVALS: Record<string, Rival> = {
     id: 'blake',
     name: 'BLAKE',
     sprite: 'rivalBlake',
+    portrait: 'trainerBlake',
     monId: 'francis',
     taunt: 'The red panda? Cute. Cute does not survive a deploy.',
     defeated: 'Well. That is going in the retrospective. Well played.',

@@ -18,6 +18,14 @@ import {
 import { applyMove, chooseEnemyMove, createMon, healsLeft, isFainted, type MonState } from './engine';
 import { facesAway } from './facing';
 import { move } from './moves';
+import MON_ATLAS_JSON from '../content/monAtlas.json';
+
+/**
+ * Where each sprite's drawing sits inside its 64x64 frame, written by
+ * tools/import_mon.py. Missing entries (the generated placeholders) fall
+ * back to the whole frame, which is what they fill.
+ */
+const MON_ATLAS = MON_ATLAS_JSON as Record<string, number[]>;
 import { randomQuestion, type MathQuestion } from './questions';
 import { LEADER_TEAM, playerTeam, SHIELDED_MON_ID, type MonSpec } from './teams';
 
@@ -30,6 +38,20 @@ const FOE_X = 148;
 const FOE_FEET = 64;
 const PLAYER_X = 14;
 const PLAYER_FEET = 100;
+
+/**
+ * The trainer stands where their first mon will, then walks off to the right
+ * as it is sent out.
+ *
+ * Bottom-anchored a little below the foe's feet line rather than on it, so
+ * every trainer lines up with the others regardless of how tall their crop
+ * came out. It cannot be the feet line itself: that is only 64px down a
+ * 160px screen, and a bust hung above it runs off the top edge.
+ */
+const TRAINER_BOTTOM = 76;
+/** Frames the walk-off takes, and how far past the edge it carries them. */
+const TRAINER_EXIT_FRAMES = 18;
+const TRAINER_EXIT_X = 90;
 
 /** A queued beat: text to read, a side effect to run, or a pause in frames. */
 type Step = string | (() => void) | { wait: number };
@@ -45,6 +67,10 @@ export interface Opponent {
   shieldedId?: string;
   /** Their battle theme. Defaults to Arpit's, which is the harder one. */
   music?: MusicName;
+  /** UI slot holding their photo, shown on the field before they send out. */
+  portrait?: string;
+  /** What they say while standing there. Falls back to a plain challenge. */
+  challenge?: string;
 }
 
 export const ARPIT: Opponent = {
@@ -52,6 +78,8 @@ export const ARPIT: Opponent = {
   team: LEADER_TEAM,
   shieldedId: SHIELDED_MON_ID,
   music: 'battle',
+  portrait: 'trainerArpit',
+  challenge: 'Gym Leader ARPIT would like to battle!',
 };
 
 export interface BattleDeps {
@@ -81,6 +109,11 @@ export class BattleScene implements Scene {
   private lowHpTimer = 0;
   private playerFlash = 0;
   private foeFlash = 0;
+  /**
+   * Walk-off progress: -1 while the trainer is standing there, then 0..1.
+   * Past 1 they are gone and the foe's mon and databox take over.
+   */
+  private trainerExit = -1;
   private ticks = 0;
 
   private readonly opponent: Opponent;
@@ -126,10 +159,22 @@ export class BattleScene implements Scene {
     // Dev affordance: ?phase=menu drops straight into move select so the
     // fight panels can be inspected without playing through the intro.
     if (import.meta.env.DEV && new URLSearchParams(window.location.search).get('phase') === 'menu') {
+      this.trainerExit = 1;
       this.toMenu();
       return;
     }
+    // The trainer is on the field until the walk-off finishes. With no
+    // portrait there is nobody to show, so skip straight to the send-out.
+    const hasPortrait = Boolean(this.opponent.portrait && assets.get(`ui:${this.opponent.portrait}`));
+    if (!hasPortrait) this.trainerExit = 1;
     this.queue(
+      ...(hasPortrait
+        ? ([
+            this.opponent.challenge ?? `${this.opponent.name} would like to battle!`,
+            () => { this.trainerExit = 0; },
+            { wait: TRAINER_EXIT_FRAMES },
+          ] as Step[])
+        : []),
       `${this.opponent.name} sent out ${this.foe.spec.name}!`,
       this.foe.spec.sendLine ?? '',
       `Go, ${this.active.spec.name}!`,
@@ -153,6 +198,9 @@ export class BattleScene implements Scene {
     this.ticks++;
     if (this.playerFlash > 0) this.playerFlash--;
     if (this.foeFlash > 0) this.foeFlash--;
+    if (this.trainerExit >= 0 && this.trainerExit < 1) {
+      this.trainerExit = Math.min(1, this.trainerExit + 1 / TRAINER_EXIT_FRAMES);
+    }
     this.updateLowHpWarning();
 
     if (this.pump(input)) return;
@@ -417,11 +465,15 @@ export class BattleScene implements Scene {
   render(r: Renderer): void {
     this.drawField(r);
 
-    this.drawMon(r, this.lastFoe, FOE_X, FOE_FEET, this.foeFlash, true);
+    // Until the trainer has walked off, the foe's half of the field is
+    // theirs: no mon, and no databox for a mon that is not out yet.
+    const introducing = this.trainerExit < 1;
+    if (introducing) this.drawTrainer(r);
+    else this.drawMon(r, this.lastFoe, FOE_X, FOE_FEET, this.foeFlash, true);
     this.drawMon(r, this.lastActive, PLAYER_X, PLAYER_FEET, this.playerFlash, false);
 
     // Panels sit opposite their own mon so neither covers the other.
-    this.drawHpPanel(r, this.lastFoe, 6, 8, false);
+    if (!introducing) this.drawHpPanel(r, this.lastFoe, 6, 8, false);
     this.drawHpPanel(r, this.lastActive, VIEW_W - 136, 66, true);
 
     if (this.phase === 'menu') this.drawMoveGrid(r);
@@ -529,6 +581,24 @@ export class BattleScene implements Scene {
   }
 
   /** `feet` is the y of the ground line; sprites are bottom-aligned onto it. */
+  /**
+   * The opponent, standing on their side of the field before the fight.
+   *
+   * Slides out to the right as their first mon is sent out, the way a
+   * trainer sprite does in the games.
+   */
+  private drawTrainer(r: Renderer): void {
+    const art = this.opponent.portrait ? assets.get(`ui:${this.opponent.portrait}`) : null;
+    if (!art) return;
+
+    const slide = this.trainerExit < 0 ? 0 : this.trainerExit;
+    // Ease out, so they pick up speed rather than jerking sideways.
+    const eased = slide * slide;
+    const x = Math.round(FOE_X + (64 - art.width) / 2 + eased * TRAINER_EXIT_X);
+    const y = Math.round(TRAINER_BOTTOM - art.height);
+    r.sprite(art, 0, 0, art.width, art.height, x, y, true);
+  }
+
   private drawMon(r: Renderer, mon: MonState | undefined, x: number, feet: number, flash: number, isFoe: boolean): void {
     if (!mon) return;
     if (flash > 0 && Math.floor(flash / 3) % 2 === 0) return;
@@ -551,9 +621,17 @@ export class BattleScene implements Scene {
     }
 
     if (mon.shielded) {
+      // Framed on what is actually drawn, not on the 64x64 frame. PI & EULER
+      // occupy the bottom 45 rows of theirs, so a box round the whole frame
+      // hangs in empty air above them and clips off the top of the screen.
+      const [bl, bt, br, bb] = MON_ATLAS[mon.spec.id] ?? [0, 0, w, h];
+      const sx = x + bl;
+      const sy = top + bt;
+      const sw = br - bl;
+      const sh = bb - bt;
       const pulse = Math.floor(this.ticks / 10) % 2 === 0 ? '#6fd8ff' : '#bdefff';
-      r.strokeRect(x - 3, top - 3, w + 6, h + 6, pulse, true);
-      r.strokeRect(x - 5, top - 5, w + 10, h + 10, pulse, true);
+      r.strokeRect(sx - 3, sy - 3, sw + 6, sh + 6, pulse, true);
+      r.strokeRect(sx - 5, sy - 5, sw + 10, sh + 10, pulse, true);
     }
   }
 

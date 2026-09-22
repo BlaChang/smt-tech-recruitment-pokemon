@@ -47,10 +47,13 @@ export type CharacterKey = (typeof CHARACTER_KEYS)[number];
 export const UI_KEYS = [
   'message', 'panel', 'fightMoves', 'fightInfo', 'databoxPlayer', 'databoxFoe', 'hpFill',
   'numbers', 'font', 'portraitProfessor', 'bbBg', 'bbBase0', 'bbBase1',
+  'trainerCalista', 'trainerRitwin', 'trainerBlake', 'trainerArpit',
 ] as const;
 
 /** Battle portraits: one frame, no animation. */
-export const MON_KEYS = ['blobheart', 'goose', 'francis', 'maytrix', 'tesselation'] as const;
+export const MON_KEYS = [
+  'blobheart', 'goose', 'francis', 'maytrix', 'tesselation', 'pieuler',
+] as const;
 
 export const MANIFEST: Manifest = {
   ...Object.fromEntries(

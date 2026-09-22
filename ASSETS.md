@@ -114,6 +114,27 @@ Audio never blocks the game: a missing file degrades to silence. There is no
 in-game mute -- volume is the operating system's job, and a toggle is one
 more thing that can be left stuck in the wrong state.
 
+## Portraits — team photos
+
+`tools/import_portrait.py` turns a background-removed photo in `art-source/`
+into a cutout: trimmed, scaled down, sharpened (a face turns to mush at this
+size otherwise), and its alpha re-hardened so the edge stays clean.
+
+| Slot | Source | Shown |
+| --- | --- | --- |
+| portraitProfessor | justin.png | the lab, during the opening |
+| trainerCalista, trainerRitwin, trainerBlake | calista/ritwin/blake.png | the rival fight, before they send out |
+| trainerArpit | arpit.png | the gym leader fight, before he sends out |
+
+Trainers are capped at 58px on the longest edge and bottom-anchored at
+`TRAINER_BOTTOM`. The foe's feet line is only 64px down a 160px screen, so
+a taller bust hung above it runs straight off the top edge. They are
+bottom-anchored rather than floated so that crops of differing heights all
+line up with one another.
+
+Missing portrait art is not an error: the battle simply skips the walk-on
+and opens on the send-out, as it did before the photos existed.
+
 ## Font — "Pokemon Emerald" by aztecwarrior28
 
 `art-source/fonts/pokemon-emerald.otf`, from FontStruct.
@@ -208,6 +229,18 @@ regenerating placeholders can never overwrite real art.
 Art already at 64x64 with real transparency and its content resting on the
 bottom edge is **copied through untouched** -- rescaling and re-hardening
 hand-made pixel art can only lose pixels that were placed deliberately.
+Art that arrives already cut out against an alpha channel is not keyed
+either: the backdrop colour is sampled from the corners, transparent corners
+decode to black, so keying would eat the drawing's darkest pixels and leave
+the background untouched. It is still trimmed and downscaled.
+
+`tools/import_mon.py` also writes `src/content/monAtlas.json`, recording
+where each drawing actually sits inside its frame. Every sprite is 64x64,
+but PI & EULER fill 45 rows of theirs and TESS ELATION fills all 64, so
+anything drawn *around* a mon -- the shield outline, so far -- needs the
+real extent or it frames empty air. Sprites with no entry (the generated
+placeholders) fall back to the whole frame.
+
 Art already drawn at 64x64 with real transparency is never keyed, rescaled
 or re-hardened -- each of those can only lose pixels the artist placed on
 purpose. The most it gets is a whole-pixel slide down onto the bottom edge,
@@ -223,9 +256,10 @@ does not treat it as a second creature.
 | Mon | Art |
 | --- | --- |
 | blobheart | pixel art at target size, used verbatim |
+| pieuler | illustration, downscaled from `art-source/mons/pieuler.png` |
 | francis | pixel art at target size, used verbatim |
 | goose | pixel art at target size, used verbatim |
-| maytrix, pieuler | generated placeholder |
+| maytrix | generated placeholder |
 
 One sprite serves both sides of the battlefield, so art drawn facing the
 wrong way for a slot is mirrored at draw time rather than edited on disk.
