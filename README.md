@@ -15,7 +15,9 @@ npm test         # 55 tests, including a full headless playthrough
 npm run build    # static dist/, deploys anywhere
 ```
 
-Keyboard only by design: arrows/WASD to move, `Z`/Enter to talk, `X` to cancel.
+Keyboard only by design: arrows/WASD to move, `Z`/Enter/Space to talk.
+`X` also advances text, but nothing in the gym is cancellable — every menu
+is a forced choice, so there is nothing to back out to.
 Touch devices get a "play this on a laptop" notice rather than a broken canvas.
 
 ### Jump to any stage while developing
