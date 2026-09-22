@@ -91,7 +91,6 @@ pitch never means touching the engine. `{name}` interpolates the nickname.
 2. Copy `.env.example` to `.env.local` and fill in:
    - `VITE_SHEETS_ENDPOINT` — the Apps Script `/exec` URL
    - `VITE_SUBMIT_TOKEN` — must match `SUBMIT_TOKEN` in `Code.gs`
-   - `VITE_GL2_CALCULATOR_URL` — optional; the puzzle NPC offers it as a hint
 
 With no endpoint set, submissions log to the console, so dev never needs the
 real sheet.

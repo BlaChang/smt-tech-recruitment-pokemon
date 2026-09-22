@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { validate, YEARS } from '../app/registry';
+import { MORE_INFO } from '../content/links';
 import { paginate } from '../ui/textbox';
 import type { Renderer } from '../engine/renderer';
 import { currentStage } from '../app/telemetry';
@@ -89,5 +90,20 @@ describe('funnel stages', () => {
     expect(currentStage(state)).toBe('beat-leader');
     state.applied = true;
     expect(currentStage(state)).toBe('applied');
+  });
+});
+
+describe('the more-information link', () => {
+  it('points at a real https url', () => {
+    expect(MORE_INFO.url).toMatch(/^https:\/\//);
+    expect(MORE_INFO.label.trim().length).toBeGreaterThan(0);
+  });
+
+  it('keeps the share token, without which the doc asks for a login', () => {
+    // A Google Docs URL pasted from the address bar rather than from Share
+    // loses ?usp=sharing and can land candidates on a permission wall at
+    // the exact moment they are deciding whether to apply.
+    expect(MORE_INFO.url).toContain('/document/d/');
+    expect(MORE_INFO.url).toContain('usp=sharing');
   });
 });

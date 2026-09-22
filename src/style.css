@@ -110,6 +110,17 @@ html, body {
   font-size: 0.95em;
 }
 
+.registry-info {
+  color: #ffd45e;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255, 212, 94, 0.4);
+}
+
+.registry-info:hover { border-bottom-color: #ffd45e; }
+
+/* The subtitle is dimmed; the link inside it should not be. */
+.registry-sub:has(.registry-info) { opacity: 1; }
+
 .registry label {
   margin-top: 6px;
   font-size: 0.95em;

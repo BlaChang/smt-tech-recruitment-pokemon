@@ -1,6 +1,7 @@
 import type { Input } from '../engine/input';
 import type { GameState } from '../state/gameState';
 import type { Application, Telemetry } from './telemetry';
+import { MORE_INFO } from '../content/links';
 
 interface Field {
   name: keyof Application;
@@ -93,6 +94,10 @@ export function openRegistry(deps: RegistryDeps): void {
   form.innerHTML = `
     <h2>THE GYM REGISTRY</h2>
     <p class="registry-sub">Leave ARPIT your email. Everything below it is optional and we do read it.</p>
+    <p class="registry-sub">
+      <a class="registry-info" href="${MORE_INFO.url}" target="_blank" rel="noopener noreferrer"
+        >${MORE_INFO.label} ↗</a>
+    </p>
     ${FIELDS.map(fieldHtml).join('')}
     <p class="registry-error" hidden></p>
     <div class="registry-actions">
