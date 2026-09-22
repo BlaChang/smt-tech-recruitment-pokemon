@@ -28,9 +28,10 @@ var SUBMIT_TOKEN = 'change-me';
  * headings, shifted by one.
  */
 var APPLICATION_HEADERS = [
-  'timestamp', 'email', 'name', 'nickname', 'year', 'knowsAlready', 'link',
-  'builtWhat', 'starter', 'minutesPlayed', 'npcsTalkedTo', 'puzzleMoves',
-  'puzzleSolvedSec', 'battleTurns', 'mathAttempts', 'sessionId', 'events',
+  'timestamp', 'email', 'name', 'nickname', 'kind', 'year', 'knowsAlready',
+  'link', 'builtWhat', 'starter', 'minutesPlayed', 'npcsTalkedTo',
+  'puzzleMoves', 'puzzleSolvedSec', 'battleTurns', 'mathAttempts',
+  'sessionId', 'events',
 ];
 
 var ABANDONED_HEADERS = [
@@ -70,6 +71,7 @@ function appendApplication(body) {
     app.email || '',
     app.name || '',
     t.playerName || '',
+    app.kind || '',
     app.year || '',
     app.experience || '',
     app.link || '',
@@ -126,8 +128,8 @@ function minutes(ms) {
 function testAppend() {
   appendApplication({
     application: {
-      email: 'test@stanford.edu', name: 'Test', year: 'Frosh',
-      experience: 'some Python', link: '', built: '',
+      email: 'test@stanford.edu', name: 'Test', kind: 'Wacky builder',
+      year: 'Frosh', experience: 'some Python', link: '', built: '',
     },
     telemetry: { playerName: 'TEST', starter: 'francis', msElapsed: 540000, npcsTalkedTo: ['greeter'],
       puzzleMoves: 9, puzzleSolvedMs: 240000, battleTurns: 12, mathAttempts: 1,

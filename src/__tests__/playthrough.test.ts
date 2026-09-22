@@ -12,7 +12,7 @@ import { createGameState } from '../state/gameState';
 import { gymMap, PLAYER_SPAWN } from '../world/maps/gym';
 import { ROOMS, roomAt, WARPS } from '../world/maps/rooms';
 import { NPCS } from '../content/npcs';
-import { YEARS } from '../app/registry';
+import { KINDS, YEARS } from '../app/registry';
 import { STARTERS } from '../battle/teams';
 import { rivalFor } from '../battle/rivals';
 import { solve } from '../puzzle/lightsOut';
@@ -526,8 +526,15 @@ describe('full playthrough', () => {
     // And what you know is its own question, not part of the year.
     expect(form?.querySelector('[name=experience]'), 'no experience field').not.toBeNull();
 
+    // Required, and a radio group: nothing is pre-checked, so an untouched
+    // form must not submit.
+    const kinds = [...(form?.querySelectorAll<HTMLInputElement>('input[name=kind]') ?? [])];
+    expect(kinds, 'the kind question is not a radio group').toHaveLength(KINDS.length);
+    expect(kinds.some((k) => k.checked), 'an option was pre-checked').toBe(false);
+
     set('email', 'ada@stanford.edu');
     set('name', 'Ada Lovelace');
+    kinds[1].checked = true;
     set('year', 'Sophomore');
     set('experience', 'some Python, zero web');
     form?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
@@ -539,6 +546,7 @@ describe('full playthrough', () => {
     expect(saved.applied).toBe(true);
     expect(saved.battleWon).toBe(true);
     expect(year?.value, 'the year selection did not stick').toBe('Sophomore');
+    expect(kinds[1].value).toBe(KINDS[1].value);
   }, 60000);
 });
 

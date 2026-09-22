@@ -6,12 +6,19 @@ import { MORE_INFO } from '../content/links';
 interface Field {
   name: keyof Application;
   label: string;
-  type: 'text' | 'email' | 'textarea' | 'select';
+  type: 'text' | 'email' | 'textarea' | 'select' | 'radio';
   placeholder: string;
   required: boolean;
   maxLength: number;
   /** For `select` only: the choices, in order. */
   options?: readonly string[];
+  /** For `radio` only: a short stored value and the prose the reader sees. */
+  choices?: readonly { value: string; text: string }[];
+  /**
+   * Shown when a required field is blank. Needed where the label is a whole
+   * question: "<question> is required." does not read as English.
+   */
+  requiredMessage?: string;
 }
 
 /**
@@ -27,6 +34,26 @@ export const YEARS = [
   'Grad student',
 ] as const;
 
+/**
+ * The two kinds of person the team is actually short of.
+ *
+ * A forced choice between two, not a checklist: which one somebody picks
+ * when made to pick is the signal. The stored value is short so the sheet
+ * column can be counted; the prose beside it is what they read.
+ */
+export const KINDS = [
+  {
+    value: 'Wacky builder',
+    text: 'A person willing to put a lot of effort into creating random, wacky, fun things',
+  },
+  {
+    value: 'Problem-solver',
+    text:
+      'A problem-solver/engineer that wants to help build solutions to helping our math ' +
+      'tournaments run on time, smoothly, and securely (preventing any kind of cheating)',
+  },
+] as const;
+
 const FIELDS: Field[] = [
   {
     name: 'email',
@@ -37,6 +64,18 @@ const FIELDS: Field[] = [
     maxLength: 120,
   },
   { name: 'name', label: 'Your actual name', type: 'text', placeholder: '', required: true, maxLength: 80 },
+  {
+    name: 'kind',
+    label:
+      'SMT Tech is selecting for two different kinds of people. ' +
+      'Which one do you think you are?',
+    requiredMessage: 'Pick which kind of person you are.',
+    type: 'radio',
+    placeholder: '',
+    required: true,
+    maxLength: 40,
+    choices: KINDS,
+  },
   {
     name: 'year',
     label: 'Year',
@@ -93,7 +132,8 @@ export function openRegistry(deps: RegistryDeps): void {
   form.noValidate = true;
   form.innerHTML = `
     <h2>THE GYM REGISTRY</h2>
-    <p class="registry-sub">Leave ARPIT your email. Everything below it is optional and we do read it.</p>
+    <p class="registry-sub">  We are looking for people to create some wacky ideas.  </p>
+    <p class="registry-sub">  Leave ARPIT your email. Everything below it is optional and we do read it.</p>
     <p class="registry-sub">
       <a class="registry-info" href="${MORE_INFO.url}" target="_blank" rel="noopener noreferrer"
         >${MORE_INFO.label} ↗</a>
@@ -167,6 +207,23 @@ export function openRegistry(deps: RegistryDeps): void {
 function fieldHtml(field: Field): string {
   const id = `registry-${field.name}`;
   const rows = field.name === 'experience' ? 2 : 3;
+
+  // Radios carry their own labels, so they replace the whole row rather
+  // than sitting under a shared one. No option is pre-checked: this is
+  // required, and a default would answer it for anyone who skimmed past.
+  if (field.type === 'radio') {
+    const choices = (field.choices ?? [])
+      .map(
+        (choice, i) => `
+      <label class="registry-choice" for="${id}-${i}">
+        <input id="${id}-${i}" type="radio" name="${field.name}" value="${choice.value}" />
+        <span>${choice.text}</span>
+      </label>`,
+      )
+      .join('');
+    return `<p class="registry-question">${field.label}</p><div class="registry-choices">${choices}</div>`;
+  }
+
   let control: string;
   if (field.type === 'select') {
     // Blank first, and selected, so an optional dropdown does not quietly
@@ -187,7 +244,9 @@ function fieldHtml(field: Field): string {
 /** Returns an error message, or null when the application is good to send. */
 export function validate(application: Application): string | null {
   for (const field of FIELDS) {
-    if (field.required && !application[field.name]) return `${field.label} is required.`;
+    if (field.required && !application[field.name]) {
+      return field.requiredMessage ?? `${field.label} is required.`;
+    }
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(application.email)) return 'That email does not look right.';
   // Blank is fine -- the dropdown starts there and the field is optional --
@@ -195,6 +254,9 @@ export function validate(application: Application): string | null {
   // countable and we would not notice until someone tried to sort it.
   if (application.year && !(YEARS as readonly string[]).includes(application.year)) {
     return 'Pick a year from the list.';
+  }
+  if (!KINDS.some((k) => k.value === application.kind)) {
+    return 'Pick which kind of person you are.';
   }
   return null;
 }

@@ -4,6 +4,8 @@ import { hasEndpoint, SHEETS_ENDPOINT, SUBMIT_TOKEN } from './config';
 export interface Application {
   email: string;
   name: string;
+  /** One of `KINDS` in registry.ts. Required, so never ''. */
+  kind: string;
   /** One of `YEARS` in registry.ts, or '' when not answered. */
   year: string;
   experience: string;

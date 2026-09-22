@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { validate, YEARS } from '../app/registry';
+import { KINDS, validate, YEARS } from '../app/registry';
 import { MORE_INFO } from '../content/links';
 import { paginate } from '../ui/textbox';
 import type { Renderer } from '../engine/renderer';
@@ -10,6 +10,7 @@ describe('registry validation', () => {
   const good = {
     email: 'ada@stanford.edu',
     name: 'Ada',
+    kind: 'Wacky builder',
     year: '',
     experience: '',
     link: '',
@@ -27,6 +28,33 @@ describe('registry validation', () => {
 
   it('rejects a malformed email', () => {
     expect(validate({ ...good, email: 'ada@stanford' })).toMatch(/email/i);
+  });
+
+  it('will not send without an answer to which kind of person you are', () => {
+    // Required on purpose: the answer is the signal, and a blank one is
+    // indistinguishable from someone who did not read the question.
+    const problem = validate({ ...good, kind: '' });
+    expect(problem).toBe('Pick which kind of person you are.');
+    // The label is a whole question, so the generic "<label> is required."
+    // would read as nonsense and quote the question back at them.
+    expect(problem).not.toMatch(/SMT Tech is selecting|is required/);
+  });
+
+  it('accepts either kind, and only those two', () => {
+    for (const kind of KINDS) {
+      expect(validate({ ...good, kind: kind.value }), kind.value).toBeNull();
+    }
+    expect(validate({ ...good, kind: 'Both' })).toBeTruthy();
+  });
+
+  it('keeps the stored answers short enough to count', () => {
+    // These land in a sheet column somebody will want to tally.
+    for (const kind of KINDS) {
+      expect(kind.value.length).toBeLessThanOrEqual(20);
+      expect(kind.text.length, 'the prose is what carries the meaning')
+        .toBeGreaterThan(kind.value.length);
+    }
+    expect(new Set(KINDS.map((k) => k.value)).size).toBe(KINDS.length);
   });
 
   it('accepts every year on the dropdown', () => {

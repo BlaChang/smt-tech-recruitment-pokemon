@@ -110,6 +110,49 @@ html, body {
   font-size: 0.95em;
 }
 
+.registry-question {
+  margin: 10px 0 2px;
+  font-size: 0.95em;
+  opacity: 0.85;
+}
+
+.registry-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Long prose options, so the radio stays pinned to the first line and the
+   text wraps beside it rather than under it. */
+.registry-choice {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 0;
+  padding: 6px 8px;
+  font-size: 0.92em;
+  line-height: 1.35;
+  color: var(--ink);
+  background: #191d2e;
+  border: 1px solid #3a4160;
+  border-radius: 3px;
+  cursor: pointer;
+  opacity: 1;
+}
+
+.registry-choice:hover { border-color: #5a628c; }
+
+.registry-choice input {
+  flex: none;
+  margin: 2px 0 0;
+  accent-color: #ffd45e;
+}
+
+.registry-choice:has(input:checked) {
+  border-color: #ffd45e;
+  background: #211f2c;
+}
+
 .registry-info {
   color: #ffd45e;
   text-decoration: none;
