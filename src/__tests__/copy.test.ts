@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import METRICS from '../content/fontMetrics.json';
+import { NPCS } from '../content/npcs';
+import { HALL_PLAQUES } from '../content/dialogue';
 import { INTRO } from '../content/intro';
 import * as DIALOGUE from '../content/dialogue';
 import { paginate } from '../ui/textbox';
@@ -162,5 +164,51 @@ describe('player-facing copy', () => {
     for (const name of ['CALISTA', 'RITWIN', 'BLAKE']) {
       expect(all, `${name} is never mentioned`).toContain(name);
     }
+  });
+});
+
+/**
+ * Copy nobody can reach.
+ *
+ * NPC_SHIPPER and NPC_ROOKIE outlived the NPCs that spoke them by one
+ * commit: their scripts sat in dialogue.ts, exported and compiling, with
+ * nothing pointing at them. Nothing failed, so nothing said so.
+ */
+describe('every script is reachable', () => {
+  /** Scripts the game can actually get to, following branches. */
+  function reachable(): Set<Script> {
+    const roots: Script[] = [INTRO, ...NPCS.map((n) => n.script), ...HALL_PLAQUES];
+    const seen = new Set<Script>();
+    const walk = (script: Script): void => {
+      if (seen.has(script)) return;
+      seen.add(script);
+      for (const cmd of script as ScriptCommand[]) {
+        if ('choice' in cmd) cmd.branch.forEach(walk);
+        if ('ifFlag' in cmd) {
+          walk(cmd.then);
+          if (cmd.otherwise) walk(cmd.otherwise);
+        }
+        if ('ifState' in cmd) {
+          walk(cmd.then);
+          if (cmd.otherwise) walk(cmd.otherwise);
+        }
+      }
+    };
+    roots.forEach(walk);
+    return seen;
+  }
+
+  it('has an NPC, a sign or a plaque for every exported script', () => {
+    // Signs are reached from map tiles rather than from a list, so they are
+    // named here. Anything else unreachable is copy that was orphaned.
+    const SIGNS = ['SIGN_PLAQUE', 'SIGN_RULES', 'LOCKED_GATE', 'GATE_OPENS', 'EXIT_PROMPT'];
+    const live = reachable();
+    const orphans: string[] = [];
+    for (const [name, value] of Object.entries(DIALOGUE)) {
+      if (!Array.isArray(value) || SIGNS.includes(name)) continue;
+      if (Array.isArray(value[0])) continue; // HALL_PLAQUES, already a root
+      if (!live.has(value as Script)) orphans.push(name);
+    }
+    expect(orphans, `nothing can reach ${orphans.join(', ')}`).toEqual([]);
   });
 });

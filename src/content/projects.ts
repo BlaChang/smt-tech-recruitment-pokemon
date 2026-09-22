@@ -5,6 +5,16 @@
  * Fill the urls in and a clickable link appears under the screen whenever a
  * candidate reads that plaque; leave one empty and its plaque simply has no
  * link. Exactly six are shown -- the room has six displays.
+ *
+ * Safe to change freely: `id`, `name`, `blurb`, `url`. Nothing looks a
+ * project up by literal id, and names are interpolated into dialogue rather
+ * than retyped. Changing an id only changes the `project:<id>` telemetry
+ * event, so old sheet rows keep the old spelling.
+ *
+ * NOT safe: the ORDER. Displays map left to right onto this list, and
+ * dialogue.ts refers to PROJECTS[0] and PROJECTS[5] as the oldest and the
+ * newest. Reorder and those lines start describing different projects --
+ * silently, since they still compile.
  */
 export interface Project {
   id: string;
@@ -18,9 +28,9 @@ export interface Project {
 export const PROJECTS: Project[] = [
   {
     id: 'registration',
-    name: 'REGISTRATION',
-    blurb: 'Hundreds of teams sign up through it, every one of them wanting a different thing.',
-    url: '',
+    name: 'COMP',
+    blurb: 'Hundreds of teams sign up through it, every one of them wanting a different thing or being very dumb when using it.  It supports both our in-person and online competition and also is where students take their test.',
+    url: 'comp.mt',
   },
   {
     id: 'grading',
@@ -30,13 +40,13 @@ export const PROJECTS: Project[] = [
   },
   {
     id: 'scoreboard',
-    name: 'LIVE SCOREBOARD',
-    blurb: 'A thousand people refreshing it at once, on the worst wifi in the building.',
+    name: 'COMPOSE',
+    blurb: 'How do our problem writers organize their problems, make sure they are the highest quality, move them around in tests, or ',
     url: '',
   },
   {
     id: 'scanner',
-    name: 'ANSWER SCANNER',
+    name: 'VOLUNTOLD',
     blurb: 'It reads ten thousand handwritten sheets. It has strong opinions about sevens.',
     url: '',
   },
@@ -44,13 +54,13 @@ export const PROJECTS: Project[] = [
     id: 'website',
     name: 'THE WEBSITE',
     blurb: 'The part everyone sees, and the part everyone has notes about.',
-    url: '',
+    url: 'stanfordmathtournament.org',
   },
   {
     id: 'dashboard',
-    name: 'TOURNAMENT DASHBOARD',
-    blurb: 'Built in a week, used for four hours, worth every hour of it.',
-    url: '',
+    name: 'MOBILE APP',
+    blurb: 'Built in a day by Anish.',
+    url: 'app.stanfordmathtournament.org',
   },
 ];
 

@@ -206,55 +206,6 @@ export const NPC_CURATOR: Script = [
   },
 ];
 
-export const NPC_SHIPPER: Script = [
-  { setFlag: 'talked:shipper' },
-  {
-    say: `I own the ${PROJECTS[2].name}. Third screen along. Go look at it, I will wait.`,
-    as: 'ON CALL',
-  },
-  {
-    say: 'It broke. Live. Forty minutes before awards, with the room watching it.',
-    as: 'ON CALL',
-  },
-  {
-    choice: ['What did you do?', 'Whose fault was it?'],
-    branch: [
-      [
-        { say: 'Found it, fixed it, pushed it, and went back to handing out water bottles.', as: 'ON CALL' },
-        { say: 'Nobody in that room knows it happened. That is the whole job, really.', as: 'ON CALL' },
-        { track: 'shipper:fix' },
-      ],
-      [
-        { say: 'Mine. Obviously mine. I wrote it.', as: 'ON CALL' },
-        { say: 'We do not do blame here, we do postmortems. Then we fix it so next year it cannot happen.', as: 'ON CALL' },
-        { track: 'shipper:blame' },
-      ],
-    ],
-  },
-];
-
-export const NPC_ROOKIE: Script = [
-  { setFlag: 'talked:rookie' },
-  { say: 'Do not let this room intimidate you. I stood exactly where you are and I could not read half of it.', as: 'FIRST YEAR' },
-  {
-    say: `I joined last year knowing nothing. My name is on ${PROJECTS[3].name} now. Fourth screen.`,
-    as: 'FIRST YEAR',
-  },
-  {
-    choice: ['How long did that take?', 'What did you already know?'],
-    branch: [
-      [
-        { say: 'One tournament cycle. You learn fast when there is a real date at the end of it.', as: 'FIRST YEAR' },
-        { track: 'rookie:time' },
-      ],
-      [
-        { say: 'Almost nothing. I liked the puzzle and I kept showing up. That turned out to be the requirement.', as: 'FIRST YEAR' },
-        { track: 'rookie:skills' },
-      ],
-    ],
-  },
-];
-
 export const HALL_PLAQUES: Script[] = PROJECTS.map((project) => [
   { run: () => showProjectLink(project.name, project.url) },
   { say: `${project.name}\n${project.blurb}` },
