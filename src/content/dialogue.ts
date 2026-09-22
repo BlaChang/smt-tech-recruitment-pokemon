@@ -17,16 +17,16 @@ export const GREETER: Script = [
   { setFlag: 'talked:greeter' },
   {
     ifState: (s) => s.battleWon,
-    then: [{ say: 'You beat ARPIT? On your first badge? Go sign the registry before he reconsiders.', as: 'FRONT DESK' }],
+    then: [{ say: 'You beat ARPIT? On your first badge? Go sign the registry before he reconsiders.', as: 'PHOEBE' }],
     otherwise: [
-      { say: 'Welcome to the SMT GYM, {name}! SYMMETREE sent you, I assume. He sends everyone.', as: 'FRONT DESK' },
+      { say: 'Welcome to the SMT GYM, {name}! I am one of the tournament directors.  SYMMETREE sent you, I assume. He sends everyone.' , as: 'PHOEBE' },
       {
         say: 'Gym rules, in order: light up the floor, beat the LEADER, sign the registry. There is no way around the floor. People ask.',
-        as: 'FRONT DESK',
+        as: 'PHOEBE',
       },
       {
         say: 'Talk to everyone on your way up. They have all happy to explain their job.',
-        as: 'FRONT DESK',
+        as: 'PHOEBE',
       },
     ],
   },
@@ -34,38 +34,38 @@ export const GREETER: Script = [
 
 export const NPC_SCALE: Script = [
   { setFlag: 'talked:scale' },
-  { say: 'Tournament day arithmetic: about a thousand students, eight rounds, tens of thousands of answers.', as: 'LOGISTICS' },
-  { say: 'All of it graded and ranked before the closing ceremony. Which is four hours later.', as: 'LOGISTICS' },
+  { say: 'Tournament day arithmetic: about a thousand students, eight rounds, tens of thousands of answers.', as: 'MISHA' },
+  { say: 'All of it graded and ranked before the closing ceremony. Which is four hours later.', as: 'MISHA' },
   {
-    say: 'You cannot do that with a spreadsheet and optimism. We tried. Once. We do not talk about that year.',
-    as: 'LOGISTICS',
+    say: 'You cannot do that with a spreadsheet and optimism. We tried. It was a spreadhsheet hell *shudder*.  We should automate as much as we can',
+    as: 'MISHA',
   },
 ];
 
 export const NPC_BUILD: Script = [
   { setFlag: 'talked:build' },
-  { say: 'You want to know what we actually make here? Fair question, {name}.', as: 'ENGINEER' },
+  { say: 'You want to know what we actually make here? Fair question, {name}.', as: 'NISH' },
   {
     say: 'Registration for hundreds of teams. The grading pipeline. The live scoreboard. The website. The scanner that reads answer sheets.',
-    as: 'ENGINEER',
+    as: 'NISH',
   },
   {
     say: 'Real users, a hard deadline, and no way to move it. The tournament happens whether the code is ready or not.',
-    as: 'ENGINEER',
+    as: 'NISH',
   },
   {
     choice: ['What do you use?', 'Sounds stressful'],
     branch: [
       [
         {
-          say: 'Whatever fits. Web front ends, Python for the pipeline, and a pile of scripts nobody will admit to writing.',
-          as: 'ENGINEER',
+          say: 'Traditionally, our tech stack is Supabase as the backend, Svelte as frontend.  Vercel or Railway for deploying. Standardish stuff',
+          as: 'NISH',
         },
-        { say: 'If you have never touched any of it, you will learn it here. That is sort of the point.', as: 'ENGINEER' },
+        { say: 'If you have never touched any of it, you will learn it here. ', as: 'NISH' },
       ],
       [
-        { say: 'It is! And then the scoreboard goes live and a thousand people look at the thing you made.', as: 'ENGINEER' },
-        { say: 'Worth it. Ask me again at 3am the night before and I may answer differently.', as: 'ENGINEER' },
+        { say: 'It is! And then the scoreboard goes live and a thousand people look at the thing you made.', as: 'NISH' },
+        { say: 'Worth it. Ask me again at 3am the night before and I may answer differently.', as: 'NISH' },
       ],
     ],
   },
@@ -73,31 +73,31 @@ export const NPC_BUILD: Script = [
 
 export const NPC_WARSTORY: Script = [
   { setFlag: 'talked:warstory' },
-  { say: 'Want a war story? Last year the Guts Round timer desynced nine minutes in.', as: 'VETERAN' },
-  { say: 'Two of us rewrote it on the floor of a lecture hall while the round was still running.', as: 'VETERAN' },
-  { say: 'Nobody in that room ever found out. That is the job. That is also the fun.', as: 'VETERAN' },
+  { say: 'Want a war story? One year, our grading and scanning software was not existent the day of the tournament', as: 'FRANCIS CHUA' },
+  { say: 'Two veteran tech members and I worked to create it while the students were taking the tests', as: 'FRANCIS CHUA' },
+  { say: 'Grading finished on time.  There was another complication with missing scans, but that is a story for another time' , as: 'FRANCIS CHUA' },
 ];
 
 export const NPC_WACKY: Script = [
   { setFlag: 'talked:wacky' },
-  { say: 'Between tournaments? We build stupid things. Gloriously stupid things.', as: 'GREMLIN' },
+  { say: 'Between tournaments? We build stupid things. Gloriously stupid things.', as: 'RANDOM TECH MEMBER' },
   {
     say: 'Someone wrote a bot that renames the entire Discord. Someone made the scoreboard play a fanfare. Someone built this gym.',
-    as: 'GREMLIN',
+    as: 'RANDOM TECH MEMBER',
   },
   {
     say: 'Nobody asked for a single one of those. That is the filter, honestly. We want the people who build the thing nobody asked for.',
-    as: 'GREMLIN',
+    as: 'RANDOM TECH MEMBER',
   },
   {
     choice: ['I do that constantly', 'Seems inefficient'],
     branch: [
       [
-        { say: 'Then you are already one of us, {name}. Go beat ARPIT and make it official.', as: 'GREMLIN' },
+        { say: 'Then you are already one of us, {name}. Go beat ARPIT and make it official.', as: 'RANDOM TECH MEMBER' },
         { track: 'wacky:yes' },
       ],
       [
-        { say: 'Hah. Deeply. Efficiency is for the grading pipeline. This part is for us.', as: 'GREMLIN' },
+        { say: 'Hah. Deeply. Efficiency is for the grading pipeline. This part is for us.', as: 'RANDOM TECH MEMBER' },
         { track: 'wacky:no' },
       ],
     ],
@@ -106,18 +106,18 @@ export const NPC_WACKY: Script = [
 
 export const NPC_HINT: Script = [
   { setFlag: 'talked:hint' },
-  { say: 'Stuck on the floor? Step on a panel and it flips itself and its four neighbours.', as: 'PUZZLER' },
-  { say: 'Light all nine. Order does not matter, and stepping on the same panel twice undoes it.', as: 'PUZZLER' },
+  { say: 'Stuck on the floor? Step on a panel and it flips itself and its four neighbours.', as: 'NISHKA' },
+  { say: 'Light all nine. Order does not matter, and stepping on the same panel twice undoes it.', as: 'NISHKA' },
   {
     choice: ['Give me a real hint', 'I want to solve it myself'],
     branch: [
       [
-        { say: 'Fine. Each panel flips itself and its four neighbours. Nine of them, everything mod 2.', as: 'PUZZLER' },
-        { say: 'So it is a linear system over GF(2). Solve it like one, or brute force it. Both count.', as: 'PUZZLER' },
+        { say: 'Fine. Each panel flips itself and its four neighbours. Nine of them, everything mod 2.', as: 'NISHKA' },
+        { say: 'So it is a linear system over GF(2). The smart way would be to solve it like one, or brute force it. Both count.', as: 'NISHKA' },
         { track: 'hint:taken' },
       ],
       [
-        { say: 'Correct answer. I will be right here.', as: 'PUZZLER' },
+        { say: 'Correct answer. I will be right here.', as: 'NISHKA' },
         { track: 'hint:refused' },
       ],
     ],
@@ -190,13 +190,16 @@ export const NPC_CURATOR: Script = [
     choice: ['Who decides what gets built?', 'Do people actually use these?'],
     branch: [
       [
-        { say: 'Whoever notices the problem. That is not a slogan, it is just how it keeps happening.', as: 'CURATOR' },
-        { say: 'Someone says "this is painful every year" and then it is their project. Sometimes they are a freshman.', as: 'CURATOR' },
+        { say: 'Whoever notices the problem or comes up with the idea to make something faster or something fun', as: 'CURATOR' },
+        { say: 'Last year, the MVP was Anish(the goat), because he just is very good at coming up with good ideas and making them happen.', as: 'CURATOR' },
+        { say: 'Voluntold, our mobile web app, our registration system, he set up an openclaw to digest our emails, a PostHog autopilot thing ', as: 'CURATOR' },
+        { say: 'He made our online test taking platform handle the load of 2000 realtime concurrent connections with no sweat or lag at all!', as: 'CURATOR' },
+        { say: 'Second MVP was probably NISH, who just seemed to have a solution to everything on our test taking platform.', as: 'CURATOR' },
         { track: 'curator:who' },
       ],
       [
-        { say: 'Every one of them, on the same Saturday, by people who will never know your name.', as: 'CURATOR' },
-        { say: 'That is the trade. No applause, and the thing you built runs a tournament.', as: 'CURATOR' },
+        { say: 'Every one of them, on the same Saturday, or on the year upcoming to the tournament.', as: 'CURATOR' },
+        { say: 'It makes TD and PW very happy to have good software supporting them.', as: 'CURATOR' },
         { track: 'curator:used' },
       ],
     ],
