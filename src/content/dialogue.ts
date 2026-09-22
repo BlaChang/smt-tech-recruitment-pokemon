@@ -238,7 +238,7 @@ export const LEADER: Script = [
 
 function leaderChallenge(): Script {
   return [
-    { say: 'So the floor let you through. Most people quit somewhere around panel eleven.', as: 'ARPIT' },
+    { say: 'So the floor let you through, huh?  Perhaps you are worth my time then.', as: 'ARPIT' },
     {
       say: 'ARPIT RANSARIA. I brought this tournament back from the dead after COVID and helped scale it to serve over two thousand people, with volunteers, including online',
       as: 'ARPIT',
@@ -275,7 +275,7 @@ function leaderPostWin(): Script {
       ],
       otherwise: [
         { setFlag: 'badge' },
-        { say: 'Beaten by a first-timer. Good. The SMT BADGE is yours, {name}.', as: 'ARPIT' },
+        { say: 'You truly are worthy of joining SMT. The SMT BADGE is yours, {name}.', as: 'ARPIT' },
         {
           say: 'That badge means one thing: you stuck with a dumb puzzle and a dumber battle because you wanted to see how it ended.',
           as: 'ARPIT',
