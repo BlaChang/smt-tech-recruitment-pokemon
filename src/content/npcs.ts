@@ -7,9 +7,7 @@ import {
   NPC_BUILD,
   NPC_CURATOR,
   NPC_HINT,
-  NPC_ROOKIE,
   NPC_SCALE,
-  NPC_SHIPPER,
   NPC_WACKY,
   NPC_WARSTORY,
   RIVAL_ENCOUNTER,
@@ -47,30 +45,12 @@ export const NPCS: NpcDef[] = [
     turnsToFace: true,
   },
   {
-    id: 'build',
-    ...inRoom('entry', 10, 4),
-    facing: 'down',
-    color: '#3f9e6a',
-    tag: 'EN',
-    script: NPC_BUILD,
-    turnsToFace: true,
-  },
-  {
     id: 'warstory',
     ...inRoom('entry', 4, 7),
     facing: 'right',
     color: '#8a5ea8',
     tag: 'VT',
     script: NPC_WARSTORY,
-    turnsToFace: true,
-  },
-  {
-    id: 'wacky',
-    ...inRoom('entry', 10, 7),
-    facing: 'left',
-    color: '#d4a02a',
-    tag: 'GR',
-    script: NPC_WACKY,
     turnsToFace: true,
   },
   {
@@ -83,10 +63,18 @@ export const NPCS: NpcDef[] = [
     script: NPC_HINT,
     turnsToFace: true,
   },
-  // The Hall of Fame's three. They stand clear of the dx6/dx7 column the
-  // player walks up, and clear of the tiles you stand on to read a display,
-  // so nobody can be blocked out of a project by someone standing in front
-  // of it.
+  /**
+   * The Hall of Fame's three.
+   *
+   * The ENGINEER and the GREMLIN used to stand in the entrance hall. They
+   * belong here: between them they make the two cases the registry then
+   * asks the candidate to choose between, and they make them standing
+   * among the projects rather than in an empty lobby.
+   *
+   * All three stand clear of the dx6/dx7 column the player walks up, and
+   * clear of the tiles you stand on to read a display, so nobody can be
+   * blocked out of a project by someone standing in front of it.
+   */
   {
     id: 'curator',
     ...inRoom('hall', 4, 9),
@@ -97,21 +85,21 @@ export const NPCS: NpcDef[] = [
     turnsToFace: true,
   },
   {
-    id: 'shipper',
+    id: 'wacky',
     ...inRoom('hall', 10, 6),
     facing: 'left',
-    color: '#3f9e6a',
-    tag: 'OC',
-    script: NPC_SHIPPER,
+    color: '#d4a02a',
+    tag: 'GR',
+    script: NPC_WACKY,
     turnsToFace: true,
   },
   {
-    id: 'rookie',
+    id: 'build',
     ...inRoom('hall', 3, 3),
     facing: 'down',
-    color: '#d4643c',
-    tag: 'FY',
-    script: NPC_ROOKIE,
+    color: '#3f9e6a',
+    tag: 'EN',
+    script: NPC_BUILD,
     turnsToFace: true,
   },
   {

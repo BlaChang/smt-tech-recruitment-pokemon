@@ -20,8 +20,6 @@ script and re-run. Current picks:
 | player | 0 | red-capped protagonist |
 | greeter | 12 | pink-haired attendant, reads as a front desk |
 | hint | 22 | purple hair — the puzzler |
-| shipper | 42 | dark hair, plain dark outfit — reads on-call |
-| rookie | 65 | red hair — the recent joiner |
 | curator | 67 | grey-haired elder, has seen every tournament |
 | warstory | 27 | white-haired old-timer |
 | build | 34 | blue overalls, reads as an engineer |
@@ -270,7 +268,7 @@ drawing points right, as GOOSE does; left is the default.
 
 | | Files | Format |
 | --- | --- | --- |
-| Characters | player, professor, greeter, scale, build, warstory, wacky, hint, curator, shipper, rookie, leader, three rivals | 48x96 sheet: 16x24 frames, 3 cols (idle, step A, step B) x 4 rows (down, up, left, right) |
+| Characters | player, professor, greeter, scale, build, warstory, wacky, hint, curator, leader, three rivals | 48x96 sheet: 16x24 frames, 3 cols (idle, step A, step B) x 4 rows (down, up, left, right) |
 | Mons | blobheart, goose, francis, maytrix, tesselation | 64x64 single frame, bottom-aligned (GBA battle-sprite size) |
 | Tiles | gym.png | 128x48 atlas of 16x16 cells, generated with `src/content/tileAtlas.json` |
 

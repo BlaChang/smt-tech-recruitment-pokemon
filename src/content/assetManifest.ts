@@ -33,8 +33,6 @@ export const CHARACTER_KEYS = [
   'wacky',
   'hint',
   'curator',
-  'shipper',
-  'rookie',
   'leader',
   'rivalCalista',
   'rivalRitwin',

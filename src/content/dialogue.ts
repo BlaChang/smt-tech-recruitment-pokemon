@@ -192,7 +192,7 @@ export const NPC_CURATOR: Script = [
       [
         { say: 'Whoever notices the problem or comes up with the idea to make something faster or something fun', as: 'CURATOR' },
         { say: 'Last year, the MVP was Anish(the goat), because he just is very good at coming up with good ideas and making them happen.', as: 'CURATOR' },
-        { say: 'Voluntold, our mobile web app, our registration system, he set up an openclaw to digest our emails, a PostHog autopilot thing ', as: 'CURATOR' },
+        { say: 'Anish created Voluntold, our mobile web app, our registration system, a good mass email solution(better than mailchimp), he set up an openclaw to digest our emails, a PostHog autopilot thing ', as: 'CURATOR' },
         { say: 'He made our online test taking platform handle the load of 2000 realtime concurrent connections with no sweat or lag at all!', as: 'CURATOR' },
         { say: 'Second MVP was probably NISH, who just seemed to have a solution to everything on our test taking platform.', as: 'CURATOR' },
         { track: 'curator:who' },
@@ -289,14 +289,18 @@ function leaderChallenge(): Script {
   return [
     { say: 'So the floor let you through. Most people quit somewhere around panel eleven.', as: 'ARPIT' },
     {
-      say: 'ARPIT RANSARIA. I keep this tournament on the rails for a thousand people, with volunteers, twice a year.',
+      say: 'ARPIT RANSARIA. I brought this tournament back from the dead after COVID and helped scale it to serve over two thousand people, with volunteers, including online',
+      as: 'ARPIT',
+    },
+    {
+      say: 'I was once in charge of it all, TD, PW, and Tech, and writing puzzle hunt.',
       as: 'ARPIT',
     },
     {
       say: 'I am not going to read your resume, {name}. I want to know whether you are still standing here in ten minutes.',
       as: 'ARPIT',
     },
-    { say: 'Two of mine against one of yours. Try to look surprised.', as: 'ARPIT' },
+    { say: 'Three of my puzzle hunt creations against one of yours. Try to look surprised.', as: 'ARPIT' },
     { track: 'battle:start' },
     { battle: true },
     {
