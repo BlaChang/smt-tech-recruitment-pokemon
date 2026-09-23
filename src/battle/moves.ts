@@ -108,11 +108,11 @@ export const MOVES: Record<string, Move> = {
   },
   mergeConflict: {
     id: 'mergeConflict',
-    name: 'CLAUDE',
-    power: 26,
+    name: 'RUST',
+    power: 36,
     accuracy: 1,
     effect: 'none',
-    flavor: 'Cooked for 5m and 30sec',
+    flavor: 'Fast as C, safe by design',
   },
   hotfix: {
     id: 'hotfix',
@@ -131,12 +131,12 @@ export const MOVES: Record<string, Move> = {
     flavor: 'No review. No regrets. Some regrets.',
   },
   rubberDuck: {
-    id: 'rubberDuck',
-    name: 'RUBBER DUCK',
+    id: 'testsolve',
+    name: 'TEST SOLVE',
     power: 0,
     accuracy: 1,
     effect: 'buff-attack',
-    flavor: 'Explaining the bug out loud revealed the bug.',
+    flavor: 'Fixing typos, confusing wording, and balancing issues',
   },
   refactor: {
     id: 'refactor',
