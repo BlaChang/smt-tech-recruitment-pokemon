@@ -19,7 +19,7 @@ script and re-run. Current picks:
 | --- | --- | --- |
 | player | 0 | red-capped protagonist |
 | greeter | 12 | pink-haired attendant, reads as a front desk |
-| hint | 22 | purple hair — the puzzler |
+| hint | 21 | purple hair under a cap — NISHKA, the puzzler |
 | curator | 67 | grey-haired elder, has seen every tournament |
 | warstory | 27 | white-haired old-timer |
 | build | 34 | blue overalls, reads as an engineer |
@@ -27,10 +27,18 @@ script and re-run. Current picks:
 | professor | 51 | white lab coat — Professor SymmeTREE |
 | leader | 62 | grey spiked hair, dark outfit — Arpit |
 | wacky | 73 | big curly hair, bright dress — the gremlin |
+| rivalCalista | 63 | purple hair under a cap |
+| rivalRitwin | 71 | grey hair, plain shirt |
+| rivalBlake | 8 | lab coat, and the only row in the rip wearing glasses |
 
 Rows come in two shapes: 12 frames (a full walk cycle) or 4 (one standing
 frame per direction). Both are handled. Only the player animates, so a
 standing-only NPC costs nothing.
+
+`WEARS_GLASSES` in that script draws a pair over a sprite's own eye pixels.
+It is empty now — Blake's row has real ones — but the mechanism is kept,
+since almost nothing else in this rip wears eyewear and a future pick may
+need it.
 
 **These are Nintendo's sprites.** Putting them on a public, Stanford-affiliated
 recruiting page carries a takedown risk. This was raised and the team chose to

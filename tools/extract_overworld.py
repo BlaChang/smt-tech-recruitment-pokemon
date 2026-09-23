@@ -55,7 +55,7 @@ ASSIGNMENTS = {
     'professor': 51,   # white lab coat -- Professor SymmeTREE
     'leader': 62,      # grey spiked hair, dark outfit -- Arpit
     'wacky': 73,       # big curly hair, bright dress -- the gremlin
-    'hint': 22,        # purple hair -- the puzzler
+    'hint': 21,        # purple hair under a cap -- NISHKA, the puzzler
     # Hall of Fame. The ENGINEER and the GREMLIN stand there too, using
     # the 'build' and 'wacky' sprites above.
     'curator': 67,     # grey-haired elder, has seen every tournament
@@ -64,11 +64,16 @@ ASSIGNMENTS = {
     # swap the index if you want someone different.
     'rivalCalista': 63,  # dark bobbed hair
     'rivalRitwin': 71,   # dark hair, plain shirt
-    'rivalBlake': 72,    # dark hair; glasses are added below
+    'rivalBlake': 8,     # lab coat, and glasses of its own -- BLAKE
 }
 
-# Characters to draw glasses onto, since the rip has none.
-WEARS_GLASSES = {'rivalBlake'}
+# Characters to draw glasses onto.
+#
+# Empty, and kept anyway: most of this rip has no eyewear, so if a slot is
+# ever pointed at a sprite that needs some, adding its name here is the
+# whole change. Blake used to be here and no longer is -- row 9 wears real
+# ones, and drawing more over the top gave him two pairs.
+WEARS_GLASSES: set = set()
 
 
 def find_character_rows(im):
