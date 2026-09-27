@@ -89,5 +89,9 @@ export const INTRO: Script = [
     say: 'You will not get far in there alone, {name}. Go on — one of these three is yours.',
     as: PROF,
   },
+  {
+    say: 'NOTE:  You are applying for the tech team no matter which starter you choose.  So feel free to choose any of them.  Hint: Your choice of starter might affect your choice of rival!',
+    as: PROF,
+  },
   PICK_STARTER,
 ];
