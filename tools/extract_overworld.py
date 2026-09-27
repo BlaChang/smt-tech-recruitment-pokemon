@@ -51,7 +51,7 @@ ASSIGNMENTS = {
     'greeter': 12,     # pink-haired attendant, reads as a front desk
     'warstory': 27,    # white-haired old-timer
     'build': 34,       # blue overalls, reads as an engineer
-    'scale': 49,       # white cap and coat, reads as an official
+    'scale': 11,       # bush hat and white beard -- MISHA, the old hand
     'professor': 51,   # white lab coat -- Professor SymmeTREE
     'leader': 62,      # grey spiked hair, dark outfit -- Arpit
     'wacky': 73,       # big curly hair, bright dress -- the gremlin

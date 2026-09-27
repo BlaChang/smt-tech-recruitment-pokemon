@@ -23,7 +23,7 @@ script and re-run. Current picks:
 | curator | 67 | grey-haired elder, has seen every tournament |
 | warstory | 27 | white-haired old-timer |
 | build | 34 | blue overalls, reads as an engineer |
-| scale | 49 | white cap and coat, reads as an official |
+| scale | 11 | bush hat and white beard — MISHA |
 | professor | 51 | white lab coat — Professor SymmeTREE |
 | leader | 62 | grey spiked hair, dark outfit — Arpit |
 | wacky | 73 | big curly hair, bright dress — the gremlin |

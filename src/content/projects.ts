@@ -47,7 +47,7 @@ export const PROJECTS: Project[] = [
   {
     id: 'compose',
     name: 'COMPOSE',
-    blurb: 'How do our problem writers organize their problems, make sure they are the highest quality, move them around between tests, all while keeping track of solutions, answers, and edits?  Once upon a time it was google docs.  Then later it was a github repo.  But the ultimate solution we came up with was COMPOSE',
+    blurb: 'How do our problem writers organize their problems, make sure they are the highest quality, move them around between tests, all while keeping track of solutions, answers, and edits?  Once upon a time it was google docs.  Then later it was a Gitlab Repo.  But the ultimate solution we came up with was COMPOSE',
     url: '',
   },
   {
