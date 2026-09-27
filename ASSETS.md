@@ -161,13 +161,16 @@ canvas `fillText`, which anti-aliases and was making every label look soft.
 Two details the baker handles:
 
 - Thirteen ASCII characters are absent from the font and render blank. `^`
-  is drawn by hand in `HAND_DRAWN` at the top of the baker, because the
-  shield questions ask for exponents and "the last digit of 7^2024" had been
-  rendering as "7 2024" — a different and much easier question. The other
-  twelve, `#*@[\]_`{|}~`, are still blank; adding one is two lines beside
-  the caret. `copy.test.ts` now sweeps the questions, move names, mon names
-  and project blurbs as well as the dialogue, so a blank glyph in any of
-  them fails the build rather than reaching a candidate.
+  and `*` are drawn by hand in `HAND_DRAWN` at the top of the baker — the
+  shield questions ask for exponents, and "the last digit of 7^2024" had
+  been rendering as "7 2024", a different and much easier question. The
+  remaining eleven, `#@[\]_`{|}~`, are still blank, and nothing
+  player-facing uses any of them: every occurrence in the source is a hex
+  colour, a map row, a tile key, a DOM selector, a console log, or the
+  `{name}` placeholder that is substituted before drawing. Adding one is two
+  lines beside the caret. `copy.test.ts` sweeps the questions, move names,
+  mon names and project blurbs as well as the dialogue, so a blank glyph in
+  any of them fails the build rather than reaching a candidate.
 - It is a FontStruct pixel font, so it only rasterises cleanly on its design
   grid. Size 15 yields zero midtone pixels; the script asserts that and
   refuses to run at a size where it would blur.

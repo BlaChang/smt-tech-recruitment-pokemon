@@ -39,6 +39,11 @@ HAND_DRAWN = {
     '^': (['..#..',
            '.###.',
            '##.##'], 6),
+    # An asterisk this small has to be an x with a centre; three real strokes
+    # turn to mush. Sits in the upper half, where an asterisk belongs.
+    '*': (['.#.#.',
+           '..#..',
+           '.#.#.'], 6),
 }
 
 
