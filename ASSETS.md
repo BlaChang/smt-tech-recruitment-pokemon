@@ -160,6 +160,14 @@ All in-game text is blitted from this baked atlas rather than drawn with
 canvas `fillText`, which anti-aliases and was making every label look soft.
 Two details the baker handles:
 
+- Thirteen ASCII characters are absent from the font and render blank. `^`
+  is drawn by hand in `HAND_DRAWN` at the top of the baker, because the
+  shield questions ask for exponents and "the last digit of 7^2024" had been
+  rendering as "7 2024" — a different and much easier question. The other
+  twelve, `#*@[\]_`{|}~`, are still blank; adding one is two lines beside
+  the caret. `copy.test.ts` now sweeps the questions, move names, mon names
+  and project blurbs as well as the dialogue, so a blank glyph in any of
+  them fails the build rather than reaching a candidate.
 - It is a FontStruct pixel font, so it only rasterises cleanly on its design
   grid. Size 15 yields zero midtone pixels; the script asserts that and
   refuses to run at a size where it would blur.

@@ -27,6 +27,20 @@ FIRST = 32         # space
 LAST = 126         # ~
 PER_ROW = 16
 
+# Glyphs this font does not define, drawn by hand instead.
+#
+# The font is missing thirteen of ASCII, and `^` is one of them -- which
+# matters because the shield questions want exponents. Each entry is the ink
+# rows and the advance to use; rows are painted from the top of the uppercase
+# band, so a caret sits where a reader expects it rather than on the baseline.
+#
+# Adding another is two lines. The rest of the missing set is #*@[\]_`{|}~.
+HAND_DRAWN = {
+    '^': (['..#..',
+           '.###.',
+           '##.##'], 6),
+}
+
 
 def build():
     from PIL import Image, ImageDraw, ImageFont
@@ -40,11 +54,29 @@ def build():
     rows = (count + PER_ROW - 1) // PER_ROW
     atlas = Image.new('RGBA', (PER_ROW * cell_w, rows * cell_h), (0, 0, 0, 0))
 
+    # Ink extent of an uppercase line. Needed before the loop, because the
+    # hand-drawn glyphs are positioned against the top of that band.
+    probe = Image.new('L', (200, cell_h), 0)
+    ImageDraw.Draw(probe).text((0, 0), 'ABCXYZ0189', font=font, fill=255)
+    cap_top, cap_bottom = probe.getbbox()[1], probe.getbbox()[3]
+
     advances = []
     missing = []
     for i in range(count):
         ch = chr(FIRST + i)
         col, row = i % PER_ROW, i // PER_ROW
+
+        if ch in HAND_DRAWN:
+            art, advance = HAND_DRAWN[ch]
+            drawn = Image.new('RGBA', (cell_w, cell_h), (255, 255, 255, 0))
+            px = drawn.load()
+            for dy, line in enumerate(art):
+                for dx, ink in enumerate(line):
+                    if ink == '#':
+                        px[dx, cap_top + dy] = (255, 255, 255, 255)
+            atlas.paste(drawn, (col * cell_w, row * cell_h))
+            advances.append(advance)
+            continue
 
         glyph = Image.new('L', (cell_w, cell_h), 0)
         ImageDraw.Draw(glyph).text((0, 0), ch, font=font, fill=255)
@@ -64,12 +96,6 @@ def build():
         atlas.paste(tinted, (col * cell_w, row * cell_h))
         advances.append(int(round(font.getlength(ch))))
 
-    # Ink height of a typical uppercase line, used to set line spacing.
-    probe = Image.new('L', (200, cell_h), 0)
-    ImageDraw.Draw(probe).text((0, 0), 'ABCXYZ0189', font=font, fill=255)
-    box = probe.getbbox()
-    cap_top, cap_bottom = box[1], box[3]
-
     os.makedirs(os.path.dirname(ATLAS), exist_ok=True)
     atlas.save(ATLAS)
 
@@ -84,7 +110,8 @@ def build():
         'capTop': cap_top,
         'capHeight': cap_bottom - cap_top,
         'space': advances[0],
-        # Glyphs this font does not define; bitmapFont.ts substitutes or blanks them.
+        # Glyphs this font does not define and that are not hand-drawn above;
+        # bitmapFont.ts substitutes or blanks them.
         'missing': ''.join(missing),
     }
     with open(METRICS, 'w') as f:
@@ -94,6 +121,8 @@ def build():
 
     print(f'atlas {atlas.size[0]}x{atlas.size[1]}, cell {cell_w}x{cell_h}, '
           f'{count - len(missing)}/{count} glyphs, cap ink rows {cap_top}..{cap_bottom}')
+    if HAND_DRAWN:
+        print(f'  drawn by hand, not in the font: {"".join(HAND_DRAWN)}')
     if missing:
         print(f'  not in this font, rendered blank: {"".join(missing)}')
         print('  bitmapFont.ts substitutes what it can (em dash -> hyphen, etc.)')

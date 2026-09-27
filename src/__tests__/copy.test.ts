@@ -5,6 +5,11 @@ import { HALL_PLAQUES } from '../content/dialogue';
 import { INTRO } from '../content/intro';
 import * as DIALOGUE from '../content/dialogue';
 import { paginate } from '../ui/textbox';
+import { measureText } from '../ui/bitmapFont';
+import { QUESTIONS } from '../battle/questions';
+import { MOVES } from '../battle/moves';
+import { LEADER_TEAM, STARTERS } from '../battle/teams';
+import { PROJECTS } from '../content/projects';
 import type { Renderer } from '../engine/renderer';
 import type { Script, ScriptCommand } from '../content/script';
 import { createGameState, type GameState } from '../state/gameState';
@@ -88,6 +93,30 @@ function lines(
   return out;
 }
 
+/**
+ * Player-facing strings that are not dialogue.
+ *
+ * The glyph check below used to see only `src/content`, so it never looked
+ * at the shield questions -- and one of them asks for "the last digit of
+ * 7^2024", which rendered as "7 2024" for as long as `^` was missing from
+ * the font. A different, and much easier, question.
+ */
+function otherCopy(): Array<{ text: string; as?: string }> {
+  const out: Array<{ text: string }> = [];
+  for (const q of QUESTIONS) {
+    out.push({ text: q.prompt }, { text: q.reward });
+    for (const option of q.options) out.push({ text: option });
+  }
+  for (const m of Object.values(MOVES)) out.push({ text: m.name });
+  for (const spec of [...STARTERS, ...LEADER_TEAM]) {
+    out.push({ text: spec.name }, { text: spec.type });
+    if (spec.blurb) out.push({ text: spec.blurb });
+    if (spec.sendLine) out.push({ text: spec.sendLine });
+  }
+  for (const project of PROJECTS) out.push({ text: project.name }, { text: project.blurb });
+  return out;
+}
+
 function everything(): Array<{ text: string; as?: string }> {
   const scripts: Script[] = [INTRO];
   for (const value of Object.values(DIALOGUE)) {
@@ -96,7 +125,7 @@ function everything(): Array<{ text: string; as?: string }> {
     if (Array.isArray(value[0])) scripts.push(...(value as Script[]));
     else scripts.push(value as Script);
   }
-  return scripts.flatMap((s) => lines(s));
+  return [...scripts.flatMap((s) => lines(s)), ...otherCopy()];
 }
 
 describe('player-facing copy', () => {
@@ -132,6 +161,15 @@ describe('player-facing copy', () => {
       // Plate is the name plus padding on both sides, drawn from x=4.
       expect(4 + width(name) + PAD_X * 2, `name plate too wide: ${name}`).toBeLessThanOrEqual(240);
     }
+  });
+
+  it('renders the caret, since the questions use exponents', () => {
+    // 7^2024 is not 72024. This is the specific failure the wider sweep
+    // below would have caught, kept as its own case because the whole
+    // point of that question is the exponent.
+    expect(new Set(M.missing).has('^')).toBe(false);
+    expect(QUESTIONS.some((q) => q.prompt.includes('^'))).toBe(true);
+    expect(measureText('2^5')).toBeGreaterThan(measureText('25'));
   });
 
   it('uses only glyphs the font actually has', () => {
