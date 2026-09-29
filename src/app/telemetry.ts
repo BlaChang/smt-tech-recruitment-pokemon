@@ -16,6 +16,8 @@ export interface Application {
 export interface TelemetrySnapshot {
   sessionId: string;
   playerName: string;
+  /** Typed at the nickname prompt; '' if the run predates that field. */
+  playerEmail: string;
   msElapsed: number;
   stage: string;
   npcsTalkedTo: string[];
@@ -63,6 +65,7 @@ export class Telemetry {
     return {
       sessionId: this.sessionId,
       playerName: state.playerName,
+      playerEmail: state.playerEmail,
       msElapsed: Date.now() - state.startedAtMs,
       stage: currentStage(state),
       npcsTalkedTo: npcsTalkedTo(state),

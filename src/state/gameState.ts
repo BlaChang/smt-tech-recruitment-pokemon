@@ -8,6 +8,14 @@ export { PANEL_CELLS };
 export interface GameState {
   /** Nickname the player types at the professor's intro. */
   playerName: string;
+  /**
+   * Email, typed at the same prompt.
+   *
+   * Collected up front rather than only at the registry so that someone who
+   * gives up halfway is still reachable -- it is the one field the
+   * `abandoned` sheet could never have.
+   */
+  playerEmail: string;
   flags: Set<string>;
 
   /** Lights Out board, row-major, true = lit. */
@@ -32,6 +40,7 @@ export interface GameState {
 export function createGameState(): GameState {
   return {
     playerName: '',
+    playerEmail: '',
     flags: new Set<string>(),
     // Seeded from a solved board, so it is always reachable.
     panels: seedBoard(),

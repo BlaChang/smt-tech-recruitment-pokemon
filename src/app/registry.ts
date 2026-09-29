@@ -199,10 +199,18 @@ export function openRegistry(deps: RegistryDeps): void {
 
   const nameField = form.querySelector<HTMLInputElement>('[name=name]');
   if (nameField && state.playerName) nameField.value = state.playerName;
+  // Already typed at the professor's prompt. Prefilled rather than asked
+  // again, but still editable -- that one was for reaching them, this one
+  // is the application.
+  const emailField = form.querySelector<HTMLInputElement>('[name=email]');
+  if (emailField && state.playerEmail) emailField.value = state.playerEmail;
 
   overlay.replaceChildren(form);
   overlay.classList.add('active');
-  form.querySelector<HTMLInputElement>('[name=email]')?.focus();
+  // Focus whichever field still needs an answer.
+  form.querySelector<HTMLInputElement>(
+    state.playerEmail ? '[name=name]' : '[name=email]',
+  )?.focus();
 }
 
 function fieldHtml(field: Field): string {

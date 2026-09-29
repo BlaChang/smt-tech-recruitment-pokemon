@@ -371,15 +371,29 @@ describe('full playthrough', () => {
   it('goes lab -> hall -> panels -> fame -> rival -> arena -> application', async () => {
     const h = setup();
 
-    // 1. Professor SymmeTREE: nickname, then a starter.
+    // 1. Professor SymmeTREE: nickname and email, then a starter.
     h.startIntro();
     for (let i = 0; i < 40 && !h.overlay.querySelector('form'); i++) h.tap('a');
     const nameForm = h.overlay.querySelector('form');
     expect(nameForm, 'the professor never asked for a name').not.toBeNull();
     const nick = nameForm?.querySelector<HTMLInputElement>('[name=nickname]');
+    const earlyEmail = nameForm?.querySelector<HTMLInputElement>('[name=email]');
+    expect(earlyEmail, 'the prompt no longer asks for an email').not.toBeNull();
+
+    // A nickname alone is not enough any more: the email is what makes an
+    // abandoned run followable-up, so the prompt refuses without it.
     if (nick) nick.value = 'ADA';
     nameForm?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    expect(h.state.playerName, 'submitted with no email').toBe('');
+
+    if (earlyEmail) earlyEmail.value = 'not-an-email';
+    nameForm?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    expect(h.state.playerName, 'submitted with a malformed email').toBe('');
+
+    if (earlyEmail) earlyEmail.value = 'ada@stanford.edu';
+    nameForm?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     expect(h.state.playerName).toBe('ADA');
+    expect(h.state.playerEmail).toBe('ada@stanford.edu');
 
     for (let i = 0; i < 80 && !h.state.starter; i++) h.tap('a');
     expect(STARTERS.map((s) => s.id)).toContain(h.state.starter);
@@ -514,6 +528,10 @@ describe('full playthrough', () => {
       if (f) f.value = value;
     };
     expect(form?.querySelector<HTMLInputElement>('[name=name]')?.value).toBe('ADA');
+    expect(
+      form?.querySelector<HTMLInputElement>('[name=email]')?.value,
+      'the registry did not prefill the email typed at the start',
+    ).toBe('ada@stanford.edu');
 
     // Year is a dropdown, and it must start blank: it is optional, so an
     // untouched form should not report whatever sits first in the list.

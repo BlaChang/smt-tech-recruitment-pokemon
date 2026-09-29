@@ -40,8 +40,9 @@ var APPLICATION_HEADERS = [
 ];
 
 var ABANDONED_HEADERS = [
-  'timestamp', 'stage', 'nickname', 'starter', 'minutesPlayed', 'npcsTalkedTo',
-  'puzzleMoves', 'battleTurns', 'mathAttempts', 'sessionId', 'events',
+  'timestamp', 'stage', 'nickname', 'email', 'starter', 'minutesPlayed',
+  'npcsTalkedTo', 'puzzleMoves', 'battleTurns', 'mathAttempts', 'sessionId',
+  'events',
 ];
 
 function doPost(e) {
@@ -103,6 +104,7 @@ function appendAbandoned(body) {
     new Date(),
     t.stage || '',
     t.playerName || '',
+    t.playerEmail || '',
     t.starter || '',
     minutes(t.msElapsed),
     (t.npcsTalkedTo || []).join(', '),
