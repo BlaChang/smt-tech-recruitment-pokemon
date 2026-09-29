@@ -53,6 +53,14 @@ export const MOVES: Record<string, Move> = {
   herdVolunteers: {
     id: 'herdVolunteers',
     name: 'VOLUNTEERS',
+    // Damage AND a self-buff on the same turn, deliberately. It reads like
+    // an oversight next to TEST SOLVE and SYMMETRY, which buff for 0, and
+    // it was briefly changed to match them before being put back.
+    //
+    // It is what makes GOOSE forgiving to random play -- flailing wins ~74%
+    // with it against ~25% for the other two starters. Dropping the power
+    // to 0 brings GOOSE into line with them and changes nothing for anyone
+    // playing deliberately, since ANNOUNCEMENT out-damages it at 28.
     power: 20,
     accuracy: 1,
     effect: 'buff-attack',
