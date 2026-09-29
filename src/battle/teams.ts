@@ -94,8 +94,6 @@ export const STARTERS: MonSpec[] = [
     maxHp: 170,
     attack: 17,
     defense: 11,
-    // Three of these four do no damage at all. GOOSE is the setup pick:
-    // debuff them, buff itself, then swing with ANNOUNCEMENT.
     moves: ['announcement', 'scheduleSlip', 'herdVolunteers', 'rollback'],
     color: '#4a7fc1',
     faces: 'right',

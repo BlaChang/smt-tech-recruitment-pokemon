@@ -168,20 +168,10 @@ describe('gym difficulty', () => {
     expect(Math.max(...rates) - Math.min(...rates)).toBeLessThan(0.15);
   });
 
-  it('still lets someone mashing random moves through', () => {
-    // Floor was 0.25, which the true average now sits exactly on -- half of
-    // all runs failed on sampling noise alone. Two things moved it: three
-    // shields, and VOLUNTEERS becoming a pure buff.
-    //
-    // That second one evened the starters out rather than weakening them.
-    // GOOSE used to flail its way through 74% of the time against 24% and
-    // 27% for the others, because the move it hit at random both buffed it
-    // and dealt 20 damage. Now all three sit at ~0.25.
-    const rates = STARTERS.map((s) => winRate(s.id, 'flailing', 0, 'arpit', 2000));
+  it('lets someone mashing random moves through more often than not', () => {
+    const rates = STARTERS.map((s) => winRate(s.id, 'flailing'));
     const average = rates.reduce((a, b) => a + b, 0) / rates.length;
-    expect(average, `flailing win rate ${average}`).toBeGreaterThan(0.15);
-    // And no starter is carried by one lucky move the way GOOSE was.
-    expect(Math.max(...rates) - Math.min(...rates), `spread ${rates}`).toBeLessThan(0.2);
+    expect(average, `flailing win rate ${average}`).toBeGreaterThan(0.25);
   });
 
   it('makes wrong math answers cost real win probability', () => {

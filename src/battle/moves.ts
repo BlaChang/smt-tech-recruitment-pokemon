@@ -53,9 +53,7 @@ export const MOVES: Record<string, Move> = {
   herdVolunteers: {
     id: 'herdVolunteers',
     name: 'VOLUNTEERS',
-    // No damage of its own: rounding people up is setup, not an attack.
-    // Spend a turn on it and everything GOOSE does afterwards hits harder.
-    power: 0,
+    power: 20,
     accuracy: 1,
     effect: 'buff-attack',
     flavor: 'Forty people, one clipboard, somehow it works.',
