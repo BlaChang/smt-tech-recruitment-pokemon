@@ -27,10 +27,9 @@ var SUBMIT_TOKEN = 'change-me';
 /**
  * Column order. appendRow below must match this exactly.
  *
- * NOTE: headers are only written when the sheet is first created. If you have
- * already collected rows and then change this list, delete the sheet tab (or
- * rename it) so it is rebuilt -- otherwise new rows land under the old
- * headings, shifted by one.
+ * Add new columns at the END of the list, never in the middle: sheetFor
+ * appends any heading a live tab is missing, but refuses to reorder one,
+ * because that would relabel every row already collected.
  */
 var APPLICATION_HEADERS = [
   'timestamp', 'email', 'name', 'nickname', 'kind', 'year', 'knowsAlready',
@@ -40,9 +39,11 @@ var APPLICATION_HEADERS = [
 ];
 
 var ABANDONED_HEADERS = [
-  'timestamp', 'stage', 'nickname', 'email', 'starter', 'minutesPlayed',
+  'timestamp', 'stage', 'nickname', 'starter', 'minutesPlayed',
   'npcsTalkedTo', 'puzzleMoves', 'battleTurns', 'mathAttempts', 'sessionId',
   'events',
+  // Appended, not inserted. See sheetFor.
+  'email',
 ];
 
 function doPost(e) {
@@ -85,7 +86,7 @@ function appendApplication(body) {
     t.starter || '',
     minutes(t.msElapsed),
     (t.npcsTalkedTo || []).join(', '),
-    t.puzzleMoves || 0,
+    t.panelPresses || 0,
     t.puzzleSolvedMs ? Math.round(t.puzzleSolvedMs / 1000) : '',
     t.battleTurns || 0,
     t.mathAttempts || 0,
@@ -104,18 +105,32 @@ function appendAbandoned(body) {
     new Date(),
     t.stage || '',
     t.playerName || '',
-    t.playerEmail || '',
     t.starter || '',
     minutes(t.msElapsed),
     (t.npcsTalkedTo || []).join(', '),
-    t.puzzleMoves || 0,
+    t.panelPresses || 0,
     t.battleTurns || 0,
     t.mathAttempts || 0,
     t.sessionId || '',
     (t.events || []).join(' | '),
+    t.playerEmail || '',
   ]);
 }
 
+/**
+ * The tab, with its header row brought up to date.
+ *
+ * Headers used to be written only when the sheet was created, so adding a
+ * column to the lists above did nothing to a tab that already existed -- new
+ * values landed under the old headings, shifted by one, silently. That
+ * caught us three times.
+ *
+ * The rule now is that columns may only ever be APPENDED. Any heading this
+ * script expects but the sheet lacks is added on the right, and rows already
+ * in the sheet simply have it blank. Insert a column in the middle of one of
+ * the lists above and this throws instead, because doing that would silently
+ * relabel every historical row.
+ */
 function sheetFor(name, headers) {
   var book = SpreadsheetApp.openById(SHEET_ID);
   var sheet = book.getSheetByName(name);
@@ -123,7 +138,32 @@ function sheetFor(name, headers) {
     sheet = book.insertSheet(name);
     sheet.appendRow(headers);
     sheet.setFrozenRows(1);
+    return sheet;
   }
+
+  var width = sheet.getLastColumn();
+  var existing = width ? sheet.getRange(1, 1, 1, width).getValues()[0] : [];
+  if (existing.length === headers.length) return sheet;
+
+  if (existing.length > headers.length) {
+    throw new Error(
+      'Sheet "' + name + '" has ' + existing.length + ' columns but the script '
+      + 'expects ' + headers.length + '. Rename the tab to start a fresh one.');
+  }
+
+  for (var i = 0; i < existing.length; i++) {
+    if (existing[i] !== headers[i]) {
+      throw new Error(
+        'Sheet "' + name + '" column ' + (i + 1) + ' is "' + existing[i]
+        + '" but the script expects "' + headers[i] + '". Columns may only be '
+        + 'appended, never inserted or reordered. Rename the tab to start a '
+        + 'fresh one, or move the new heading to the end of the list.');
+    }
+  }
+
+  var added = headers.slice(existing.length);
+  sheet.getRange(1, existing.length + 1, 1, added.length).setValues([added]);
+  sheet.setFrozenRows(1);
   return sheet;
 }
 

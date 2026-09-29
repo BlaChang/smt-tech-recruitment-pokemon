@@ -169,7 +169,15 @@ field, then Vercel's WAF rate limiting, then Cloudflare Turnstile on the
 form. None of it is worth adding before there is something to stop.
 
 Two sheets get written: `applications`, and `abandoned` for people who closed
-the tab without finishing. Because the gym is hard-gated, that second sheet is
+the tab without finishing.
+
+After editing `server/Code.gs`, paste it into the Apps Script editor and
+**Deploy > Manage deployments > Edit > New version**. Apps Script serves the
+last *deployed* version, not the last saved one, and the repo copy is only
+for version control — nothing syncs it. Columns may only be **appended** to
+the header lists: `sheetFor` adds any heading a live tab is missing, and
+throws rather than reordering one, since that would relabel every row
+already collected. Because the gym is hard-gated, that second sheet is
 the only way to see what the gate costs you.
 
 ## Difficulty is a contract, not a vibe
