@@ -13,7 +13,7 @@ import { gymMap, PLAYER_SPAWN } from '../world/maps/gym';
 import { ROOMS, roomAt, WARPS } from '../world/maps/rooms';
 import { NPCS } from '../content/npcs';
 import { KINDS, YEARS } from '../app/registry';
-import { STARTERS } from '../battle/teams';
+import { LEADER_TEAM, STARTERS } from '../battle/teams';
 import { rivalFor } from '../battle/rivals';
 import { solve } from '../puzzle/lightsOut';
 import { panelCellAt } from '../world/overworld';
@@ -515,6 +515,18 @@ describe('full playthrough', () => {
       h.tap('a');
     }
     expect(fought, 'Arpit never battled').toBe(true);
+
+    // Every one of Arpit's mons is shielded, so beating him means answering
+    // at least one question per mon. The first shield is the one that gets
+    // forgotten: onEnter sends the lead foe out, and if it does not ask,
+    // that shield never drops and the fight cannot be won at all.
+    expect(
+      h.state.answeredQuestions.length,
+      'beat Arpit without breaking every shield',
+    ).toBeGreaterThanOrEqual(LEADER_TEAM.length);
+
+    // And none of them twice.
+    expect(new Set(h.state.answeredQuestions).size).toBe(h.state.answeredQuestions.length);
     expect(h.state.battleWon, 'never beat Arpit').toBe(true);
 
     // 7. The registry.

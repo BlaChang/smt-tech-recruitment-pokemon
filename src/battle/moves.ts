@@ -61,7 +61,7 @@ export const MOVES: Record<string, Move> = {
   rowReduce: {
     id: 'rowReduce',
     name: 'ROW REDUCE',
-    power: 26,
+    power: 28,
     accuracy: 1,
     effect: 'none',
     flavor: 'Everything below the pivot goes to zero.',
@@ -69,7 +69,7 @@ export const MOVES: Record<string, Move> = {
   determinant: {
     id: 'determinant',
     name: 'DETERMINANT',
-    power: 38,
+    power: 40,
     accuracy: 0.9,
     effect: 'none',
     flavor: 'If it is zero, nothing survives.',
@@ -85,7 +85,7 @@ export const MOVES: Record<string, Move> = {
   tileThePlane: {
     id: 'tileThePlane',
     name: 'TESSELLATE',
-    power: 30,
+    power: 32,
     accuracy: 1,
     effect: 'none',
     flavor: 'No gaps. No overlaps. No escape.',
@@ -93,7 +93,7 @@ export const MOVES: Record<string, Move> = {
   penrose: {
     id: 'penrose',
     name: 'PENROSE',
-    power: 40,
+    power: 42,
     accuracy: 0.9,
     effect: 'none',
     flavor: 'It never repeats, so you never see it coming twice.',
@@ -197,7 +197,7 @@ export const MOVES: Record<string, Move> = {
   deadline: {
     id: 'deadline',
     name: 'THE DEADLINE',
-    power: 40,
+    power: 42,
     accuracy: 0.95,
     effect: 'none',
     flavor: 'The tournament does not move.',

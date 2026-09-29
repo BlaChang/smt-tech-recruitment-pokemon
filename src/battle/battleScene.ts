@@ -27,7 +27,7 @@ import MON_ATLAS_JSON from '../content/monAtlas.json';
  */
 const MON_ATLAS = MON_ATLAS_JSON as Record<string, number[]>;
 import { randomQuestion, type MathQuestion } from './questions';
-import { LEADER_TEAM, playerTeam, SHIELDED_MON_ID, type MonSpec } from './teams';
+import { LEADER_SHIELDS_EVERY, LEADER_TEAM, playerTeam, type MonSpec } from './teams';
 
 /**
  * Field layout, sized for 64x64 combatants on a 240x160 panel. Each sprite is
@@ -63,8 +63,8 @@ export interface Opponent {
   /** Shown in battle messages, e.g. "CALISTA sent out GOOSE!". */
   name: string;
   team: MonSpec[];
-  /** Mon that hides behind the math-question shield, if any. */
-  shieldedId?: string;
+  /** True when every mon they field hides behind a math-question shield. */
+  shieldsEvery?: boolean;
   /** Their battle theme. Defaults to Arpit's, which is the harder one. */
   music?: MusicName;
   /** UI slot holding their photo, shown on the field before they send out. */
@@ -76,7 +76,7 @@ export interface Opponent {
 export const ARPIT: Opponent = {
   name: 'ARPIT',
   team: LEADER_TEAM,
-  shieldedId: SHIELDED_MON_ID,
+  shieldsEvery: LEADER_SHIELDS_EVERY,
   music: 'battle',
   portrait: 'trainerArpit',
   challenge: 'Gym Leader ARPIT would like to battle!',
@@ -122,7 +122,7 @@ export class BattleScene implements Scene {
     this.opponent = deps.opponent ?? ARPIT;
     this.party = playerTeam(deps.state.starter).map((spec) => createMon(spec));
     this.foes = this.opponent.team.map((spec) =>
-      createMon(spec, spec.id === this.opponent.shieldedId),
+      createMon(spec, this.opponent.shieldsEvery === true),
     );
   }
 
@@ -179,7 +179,10 @@ export class BattleScene implements Scene {
       this.foe.spec.sendLine ?? '',
       `Go, ${this.active.spec.name}!`,
       this.active.spec.sendLine ?? '',
-      () => this.toMenu(),
+      // The lead foe can be shielded too, now that Arpit shields all three.
+      // Missing this left the first shield up with no question to bring it
+      // down, and the fight could not be won at all.
+      () => (this.foe.shielded ? this.askQuestion(true) : this.toMenu()),
     );
   }
 
@@ -387,7 +390,7 @@ export class BattleScene implements Scene {
   }
 
   private askQuestion(first: boolean): void {
-    this.question = randomQuestion();
+    this.question = randomQuestion(this.deps.state.answeredQuestions);
     this.queue(
       first
         ? `${this.opponent.name}: That shield does not come down for force. It comes down for arithmetic.`
@@ -409,6 +412,10 @@ export class BattleScene implements Scene {
 
     if (picked === question.answer) {
       this.deps.track('math:correct', { attempts: this.deps.state.mathAttempts });
+      // Retired for the rest of the run, including across a defeat.
+      if (!this.deps.state.answeredQuestions.includes(question.prompt)) {
+        this.deps.state.answeredQuestions.push(question.prompt);
+      }
       this.queue(
         `${this.opponent.name}: ${question.reward}`,
         () => {

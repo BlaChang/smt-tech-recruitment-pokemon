@@ -44,6 +44,27 @@ HAND_DRAWN = {
     '*': (['.#.#.',
            '..#..',
            '.#.#.'], 6),
+    # Set braces. A question asking for the subsets of {0..9} needs them,
+    # and the font has neither. Nine rows, the height of a capital, so they
+    # sit around the digits rather than above them.
+    '{': (['..##',
+           '.#..',
+           '.#..',
+           '.#..',
+           '##..',
+           '.#..',
+           '.#..',
+           '.#..',
+           '..##'], 5),
+    '}': (['##..',
+           '..#.',
+           '..#.',
+           '..#.',
+           '..##',
+           '..#.',
+           '..#.',
+           '..#.',
+           '##..'], 5),
 }
 
 

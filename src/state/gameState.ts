@@ -30,6 +30,13 @@ export interface GameState {
   battleWon: boolean;
   battleTurns: number;
   mathAttempts: number;
+  /**
+   * Prompts already answered correctly, so Arpit cannot ask them again.
+   *
+   * Lives on the save rather than in the battle scene, so it survives a
+   * defeat and a retry: a question you have beaten stays beaten.
+   */
+  answeredQuestions: string[];
   applied: boolean;
   playerX: number;
   playerY: number;
@@ -51,6 +58,7 @@ export function createGameState(): GameState {
     battleWon: false,
     battleTurns: 0,
     mathAttempts: 0,
+    answeredQuestions: [],
     applied: false,
     playerX: PLAYER_SPAWN.x,
     playerY: PLAYER_SPAWN.y,

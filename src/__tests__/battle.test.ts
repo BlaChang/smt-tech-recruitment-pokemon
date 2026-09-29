@@ -11,10 +11,10 @@ import {
   MIN_STAGE,
 } from '../battle/engine';
 import { MAX_MOVE_NAME, move, MOVES } from '../battle/moves';
-import { LEADER_TEAM, playerTeam, SHIELDED_MON_ID, STARTERS, type MonSpec } from '../battle/teams';
+import { LEADER_SHIELDS_EVERY, LEADER_TEAM, playerTeam, STARTERS, type MonSpec } from '../battle/teams';
 import { rivalFor, rivalTeam } from '../battle/rivals';
 import { QUESTIONS, randomQuestion } from '../battle/questions';
-import { BattleScene } from '../battle/battleScene';
+import { ARPIT, BattleScene } from '../battle/battleScene';
 import { createGameState } from '../state/gameState';
 import type { Renderer } from '../engine/renderer';
 import { audio } from '../engine/audio';
@@ -57,8 +57,20 @@ describe('shield', () => {
     expect(after.damage).toBeGreaterThan(1);
   });
 
-  it('is only on the ace', () => {
-    expect(LEADER_TEAM.filter((m) => m.id === SHIELDED_MON_ID)).toHaveLength(1);
+  it('is on every one of Arpit\'s mons, not just the ace', () => {
+    expect(LEADER_SHIELDS_EVERY).toBe(true);
+    expect(ARPIT.shieldsEvery).toBe(true);
+    expect(LEADER_TEAM.length).toBeGreaterThan(1);
+  });
+
+  it('is on none of a rival\'s', () => {
+    // The rival fight is already uphill on the type chart. Adding maths to
+    // it would make the first real battle the hardest one in the game.
+    for (const starter of STARTERS) {
+      const rival = rivalFor(starter.id);
+      expect(rivalTeam(rival).length).toBe(1);
+    }
+    expect(ARPIT.shieldsEvery).not.toBe(undefined);
   });
 });
 
@@ -372,5 +384,45 @@ describe('move names', () => {
       const label = mv.effect === 'heal' ? `${mv.name} x2` : mv.name;
       expect(label.length, `"${label}" overflows its cell`).toBeLessThanOrEqual(MAX_MOVE_NAME + 3);
     }
+  });
+});
+
+describe('the question bank', () => {
+  it('identifies questions by a prompt that is unique', () => {
+    // `answeredQuestions` keys on the prompt, so two questions sharing one
+    // would retire each other.
+    const prompts = QUESTIONS.map((q) => q.prompt);
+    expect(new Set(prompts).size).toBe(prompts.length);
+  });
+
+  it('has enough questions for a fight, with room to lose one', () => {
+    // Three shields per attempt, and a correct answer is retired for the
+    // rest of the run. Fewer than four and a single retry exhausts it.
+    expect(QUESTIONS.length).toBeGreaterThanOrEqual(LEADER_TEAM.length + 1);
+  });
+
+  it('never asks one the player has already got right', () => {
+    const answered: string[] = [];
+    for (let i = 0; i < QUESTIONS.length; i++) {
+      const q = randomQuestion(answered);
+      expect(answered, `repeated "${q.prompt}" after ${answered.length} answers`)
+        .not.toContain(q.prompt);
+      answered.push(q.prompt);
+    }
+  });
+
+  it('starts over rather than running dry once they are all answered', () => {
+    // The gym is hard-gated. There must be no state in which Arpit has
+    // nothing left to ask and the shield cannot come down.
+    const all = QUESTIONS.map((q) => q.prompt);
+    const q = randomQuestion(all);
+    expect(q.prompt).toBeTruthy();
+    expect(all).toContain(q.prompt);
+  });
+
+  it('still shuffles the options, so the answer is not always first', () => {
+    const seen = new Set<number>();
+    for (let i = 0; i < 60; i++) seen.add(randomQuestion([]).answer);
+    expect(seen.size).toBeGreaterThan(1);
   });
 });

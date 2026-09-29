@@ -118,6 +118,12 @@ export const STARTERS: MonSpec[] = [
  * Arpit's three: one of each type, so every starter meets one good matchup,
  * one bad and one even.
  *
+ * Every one of them is shielded, so the fight is three maths questions as
+ * well as three battles. That change alone cost a careless challenger about
+ * half their win rate, so the stat buff on top of it is deliberately small:
+ * +2 HP each, and +2 power on the five attacks only they use. Simulated,
+ * not guessed -- see the bounds in balance.test.ts.
+ *
  * Their stats are kept close together on purpose. When the ace was much the
  * strongest, whichever starter happened to be weak against *it* was a trap
  * pick -- it met its worst matchup last, already worn down. Flattening the
@@ -128,7 +134,7 @@ export const LEADER_TEAM: MonSpec[] = [
     id: 'maytrix',
     name: 'MAY TRIX',
     type: 'PW',
-    maxHp: 70,
+    maxHp: 72,
     attack: 9,
     defense: 11,
     moves: ['rowReduce', 'determinant', 'transpose', 'rollback'],
@@ -139,7 +145,7 @@ export const LEADER_TEAM: MonSpec[] = [
     id: 'tesselation',
     name: 'TESS ELATION',
     type: 'TECH',
-    maxHp: 70,
+    maxHp: 72,
     attack: 9,
     defense: 12,
     moves: ['tileThePlane', 'penrose', 'symmetryGroup', 'hotfix'],
@@ -151,7 +157,7 @@ export const LEADER_TEAM: MonSpec[] = [
     id: 'pieuler',
     name: 'PI & EULER',
     type: 'TD',
-    maxHp: 72,
+    maxHp: 74,
     attack: 10,
     defense: 12,
     moves: ['deadline', 'announcement', 'symmetryGroup', 'hotfix'],
@@ -160,8 +166,14 @@ export const LEADER_TEAM: MonSpec[] = [
   },
 ];
 
-/** The ace that hides behind a shield until the challenger answers a math question. */
-export const SHIELDED_MON_ID = 'pieuler';
+/**
+ * Every one of Arpit's mons hides behind a shield, not just the ace.
+ *
+ * Three questions rather than one, and a wrong answer hands him a free turn
+ * each time, so the maths is now the spine of the fight instead of a beat
+ * near the end. Rivals have no shield at all -- see `Opponent.shieldsEvery`.
+ */
+export const LEADER_SHIELDS_EVERY = true;
 
 /**
  * Rival mons: the same creatures as the starters, but less developed.

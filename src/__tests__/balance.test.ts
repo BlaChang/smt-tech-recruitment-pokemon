@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { applyMove, chooseEnemyMove, createMon, healsLeft, isFainted } from '../battle/engine';
 import { move } from '../battle/moves';
-import { LEADER_TEAM, playerTeam, SHIELDED_MON_ID, STARTERS, typeMultiplier } from '../battle/teams';
+import { LEADER_SHIELDS_EVERY, LEADER_TEAM, playerTeam, STARTERS, typeMultiplier } from '../battle/teams';
 import { rivalFor, rivalTeam } from '../battle/rivals';
 
 /**
@@ -41,24 +41,26 @@ function runBattle(
 ): boolean {
   const party = playerTeam(starterId).map((s) => createMon(s));
   const team = against === 'arpit' ? LEADER_TEAM : rivalTeam(rivalFor(starterId));
-  const shield = against === 'arpit' ? SHIELDED_MON_ID : undefined;
-  const foes = team.map((s) => createMon(s, s.id === shield));
+  // Arpit shields every mon, so `wrongAnswers` is per shield, not per fight.
+  const shielded = against === 'arpit' && LEADER_SHIELDS_EVERY;
+  const foes = team.map((s) => createMon(s, shielded));
   let p = 0;
   let e = 0;
   let turns = 0;
-  let wrongLeft = wrongAnswers;
+  let wrongPerShield = wrongAnswers;
 
   while (p < party.length && e < foes.length && turns < 300) {
     turns++;
 
     if (foes[e].shielded) {
       // A wrong answer hands Arpit a free turn; the shield drops after.
-      if (wrongLeft-- > 0) {
+      if (wrongPerShield-- > 0) {
         applyMove(foes[e], party[p], chooseEnemyMove(foes[e], foes[e].spec.moves.map(move)));
         if (isFainted(party[p])) p++;
         continue;
       }
       foes[e].shielded = false;
+      wrongPerShield = wrongAnswers;  // the next shield is a fresh question
     }
 
     applyMove(party[p], foes[e], move(chooseMove(party[p], policy)));
@@ -79,10 +81,11 @@ function winRate(
   policy: Policy,
   wrongAnswers = 0,
   against: 'arpit' | 'rival' = 'arpit',
+  runs = RUNS,
 ): number {
   let wins = 0;
-  for (let i = 0; i < RUNS; i++) if (runBattle(starterId, policy, wrongAnswers, against)) wins++;
-  return wins / RUNS;
+  for (let i = 0; i < runs; i++) if (runBattle(starterId, policy, wrongAnswers, against)) wins++;
+  return wins / runs;
 }
 
 describe('the rival fight', () => {
@@ -134,18 +137,29 @@ describe('move order', () => {
 
 describe('gym difficulty', () => {
   it('is nearly certain for a challenger who attacks and heals', () => {
+    // The one bound that did not move when the shields did: whatever else
+    // changes, someone attacking and healing has to clear a hard gate
+    // reliably. FRANCIS sits nearest it at ~0.92, close enough that 400
+    // runs straddles 0.9 on noise alone, so this one samples harder.
     for (const starter of STARTERS) {
-      const rate = winRate(starter.id, 'heals');
+      const rate = winRate(starter.id, 'heals', 0, 'arpit', 4000);
       expect(rate, `${starter.name} intended-play win rate ${rate}`).toBeGreaterThan(0.9);
     }
   });
 
-  it('is still forgiving to a challenger who never notices the heal', () => {
-    // BLOBHEART sits lowest here on purpose: its biggest move has recoil, so
-    // "always hit hardest" costs it something. It must still clear the floor.
+  it('is still winnable by a challenger who never notices the heal', () => {
+    // This floor used to be 0.25. Shielding all three of Arpit's mons cost a
+    // careless challenger roughly half their win rate on its own, and that
+    // is the point of the change, so the bound moved with it rather than
+    // the difficulty being walked back to meet it.
+    //
+    // ~0.2 means three or four attempts. That is tedious but not a wall:
+    // losing costs nothing, Arpit re-offers immediately, and anyone losing
+    // that often has been shown the heal in their own move list every turn.
+    // BLOBHEART sits lowest on purpose -- its biggest move has recoil.
     for (const starter of STARTERS) {
       const rate = winRate(starter.id, 'never-heal');
-      expect(rate, `${starter.name} never-heal win rate ${rate}`).toBeGreaterThan(0.25);
+      expect(rate, `${starter.name} never-heal win rate ${rate}`).toBeGreaterThan(0.15);
     }
   });
 
@@ -184,7 +198,19 @@ describe('gym difficulty', () => {
     // starts filtering for patience with a losing streak.
     for (const starter of STARTERS) {
       const rate = winRate(starter.id, 'mashing');
-      expect(rate, `${starter.name} mashing A vs Arpit: ${rate}`).toBeGreaterThan(0.3);
+      expect(rate, `${starter.name} mashing A vs Arpit: ${rate}`).toBeGreaterThan(0.15);
+    }
+  });
+
+  it('makes the maths the spine of the fight, not a beat near the end', () => {
+    // One wrong answer per shield is now three free turns for Arpit across
+    // the fight, where it used to be one. Getting them right is the single
+    // biggest thing a challenger controls.
+    for (const starter of STARTERS) {
+      const right = winRate(starter.id, 'never-heal', 0);
+      const wrong = winRate(starter.id, 'never-heal', 1);
+      expect(wrong, `${starter.name} should suffer badly for wrong answers`)
+        .toBeLessThan(right / 2);
     }
   });
 

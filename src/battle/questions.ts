@@ -42,10 +42,42 @@ export const QUESTIONS: MathQuestion[] = [
     answer: 0,
     reward: 'Square it, subtract two. Correct.',
   },
+  {
+    prompt: 'How many possible subsets can one make of {0,1,2,3,4,5,6,7,8,9}',
+    options: ['1024', '1028', '512'],
+    answer: 0,
+    reward: 'Each number can be either in or outside the subset.  A power of 2, correct.',
+  },
+  {
+    prompt: 'If a 5x5x5 cube is painted blue on its surface, how many 1x1x1 cubes have at least one side blue?',
+    options: ['98', '100', '102'],
+    answer: 0,
+    reward: 'Subtract the inner 3x3x3 core, correct.',
+  },
+  {
+    prompt: 'What is e^(ipi/3) + e^(2ipi/3) + e^(3i pi/3)? + ... + e^(6pi/3)',
+    options: ['0', '-1', '1'],
+    answer: 0,
+    reward: 'Roots of unity, their center of mass is 0, correct.',
+  },
 ];
 
-export function randomQuestion(rng: () => number = Math.random): MathQuestion {
-  const q = QUESTIONS[Math.floor(rng() * QUESTIONS.length)];
+/**
+ * A question the player has not already answered correctly.
+ *
+ * `answered` holds prompts, which are unique across the bank. Once every
+ * question has been beaten the pool resets rather than running dry -- the
+ * gym is hard-gated, so there is no state in which Arpit has nothing left
+ * to ask and the shield cannot come down.
+ */
+export function randomQuestion(
+  answered: readonly string[] = [],
+  rng: () => number = Math.random,
+): MathQuestion {
+  const seen = new Set(answered);
+  const fresh = QUESTIONS.filter((q) => !seen.has(q.prompt));
+  const pool = fresh.length ? fresh : QUESTIONS;
+  const q = pool[Math.floor(rng() * pool.length)];
   // Options are authored correct-first for readability; shuffle so the answer moves.
   const order = shuffle([0, 1, 2], rng);
   return {

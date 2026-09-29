@@ -185,12 +185,16 @@ the only way to see what the gate costs you.
 The gate is hard: no application without beating Arpit. So the numbers are
 simulated, not guessed, and `src/__tests__/balance.test.ts` enforces them:
 
+All three of Arpit's mons hide behind a shield that only a correct answer
+drops, and a question you have beaten is never asked again — across a defeat
+and a retry too.
+
 | How the candidate plays | Wins |
 | --- | --- |
-| Attacks and heals when hurt | ~99% |
-| Only ever attacks | ~83% |
-| Mashes random moves | ~57% |
-| Attacks, but gets the math question wrong twice | ~92% |
+| Attacks and heals when hurt | ~95% |
+| Only ever attacks | ~30% |
+| Mashes random moves | ~40% |
+| Attacks, but gets one question wrong per shield | ~2% |
 
 Change a stat and those tests tell you if you broke the gate. Losing is still
 possible — Arpit re-offers the battle, and nothing is lost.
