@@ -4,7 +4,7 @@ import { audio, type MusicName } from '../engine/audio';
 import type { Input } from '../engine/input';
 import type { Renderer } from '../engine/renderer';
 import type { Scene } from '../engine/scenes';
-import type { GameState } from '../state/gameState';
+import { hasFlag, setFlag, type GameState } from '../state/gameState';
 import { Menu } from '../ui/menu';
 import { TextBox } from '../ui/textbox';
 import {
@@ -52,6 +52,9 @@ const TRAINER_BOTTOM = 76;
 /** Frames the walk-off takes, and how far past the edge it carries them. */
 const TRAINER_EXIT_FRAMES = 18;
 const TRAINER_EXIT_X = 90;
+
+/** Set the first time Arpit explains what the shield wants. */
+const SHIELD_EXPLAINED = 'shield:explained';
 
 /** A queued beat: text to read, a side effect to run, or a pause in frames. */
 type Step = string | (() => void) | { wait: number };
@@ -389,12 +392,34 @@ export class BattleScene implements Scene {
     this.queue(`Go, ${this.active.spec.name}!`, this.active.spec.sendLine ?? '', () => this.toMenu());
   }
 
-  private askQuestion(first: boolean): void {
-    this.question = randomQuestion(this.deps.state.answeredQuestions);
+  /**
+   * Puts a question up.
+   *
+   * `newShield` is false when this is a retry after a wrong answer.
+   *
+   * Arpit explains the rule once per run, not once per shield. He fields
+   * three of them and the fight is often re-attempted, so the full line
+   * every time turned an ominous one-off into throat-clearing. The flag
+   * lives on the save, so it does not come back on a retry either.
+   */
+  private askQuestion(newShield: boolean): void {
+    const state = this.deps.state;
+    this.question = randomQuestion(state.answeredQuestions);
+
+    let opener: string;
+    if (!newShield) {
+      opener = `${this.opponent.name}: Not it. Try this one.`;
+    } else if (!hasFlag(state, SHIELD_EXPLAINED)) {
+      setFlag(state, SHIELD_EXPLAINED);
+      opener =
+        `${this.opponent.name}: That shield does not come down for force. `
+        + 'It comes down for arithmetic.';
+    } else {
+      opener = `${this.opponent.name}: Another one. Same rule.`;
+    }
+
     this.queue(
-      first
-        ? `${this.opponent.name}: That shield does not come down for force. It comes down for arithmetic.`
-        : `${this.opponent.name}: Not it. Try this one.`,
+      opener,
       this.question.prompt,
       () => {
         this.phase = 'question';

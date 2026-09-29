@@ -121,8 +121,10 @@ export const STARTERS: MonSpec[] = [
  * Every one of them is shielded, so the fight is three maths questions as
  * well as three battles. That change alone cost a careless challenger about
  * half their win rate, so the stat buff on top of it is deliberately small:
- * +2 HP each, and +2 power on the five attacks only they use. Simulated,
- * not guessed -- see the bounds in balance.test.ts.
+ * +2 HP each, and +1 power on the five attacks only they use. Simulated,
+ * not guessed. +2 power put FRANCIS at 0.912 against the 0.9 floor for the
+ * intended way to play, which is not margin enough to call the contract
+ * met; +1 leaves it at 0.921. See the bounds in balance.test.ts.
  *
  * Their stats are kept close together on purpose. When the ace was much the
  * strongest, whichever starter happened to be weak against *it* was a trap

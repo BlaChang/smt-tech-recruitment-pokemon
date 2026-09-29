@@ -192,9 +192,9 @@ and a retry too.
 | How the candidate plays | Wins |
 | --- | --- |
 | Attacks and heals when hurt | ~95% |
-| Only ever attacks | ~30% |
+| Only ever attacks | ~34% |
 | Mashes random moves | ~40% |
-| Attacks, but gets one question wrong per shield | ~2% |
+| Attacks, but gets one question wrong per shield | ~3% |
 
 Change a stat and those tests tell you if you broke the gate. Losing is still
 possible — Arpit re-offers the battle, and nothing is lost.
