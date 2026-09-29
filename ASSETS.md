@@ -77,7 +77,14 @@ python3 tools/extract_audio.py   # build public/assets/audio/
 ```
 
 The mapping from role to hex ID lives at the top of `extract_audio.py` and is
-a **best guess** — the rip carries no names. `audition.py` writes a page that
+a **best guess** — the rip carries no names.
+
+One clip does double duty: `heal` plays for a heal *and* for any stat going
+up, since both are the same beat — a turn spent on yourself rather than on
+them. Stats going down keep `debuff`. Either way the cue is queued directly
+in front of the line it belongs to ("GOOSE's output rose!"), so it lands on
+the frame that text appears rather than when the move resolved, which can be
+several pages earlier. `audition.py` writes a page that
 plays every clip and highlights the ones currently wired in, so correcting a
 pick is one line and a re-run.
 

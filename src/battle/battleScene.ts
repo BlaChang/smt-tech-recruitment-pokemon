@@ -1,6 +1,6 @@
 import { VIEW_H, VIEW_W } from '../engine/config';
 import { assets } from '../engine/assets';
-import { audio, type MusicName } from '../engine/audio';
+import { audio, type MusicName, type SoundName } from '../engine/audio';
 import type { Input } from '../engine/input';
 import type { Renderer } from '../engine/renderer';
 import type { Scene } from '../engine/scenes';
@@ -335,9 +335,18 @@ export class BattleScene implements Scene {
   }
 
   /** Applies a move and returns the lines describing what happened. */
-  private resolve(attacker: MonState, defender: MonState, mv: ReturnType<typeof move>, byPlayer: boolean): string[] {
+  /**
+   * Plays a move out into the step queue.
+   *
+   * Returns steps rather than plain lines so a sound can sit immediately in
+   * front of the text it belongs to. `pump` runs functions straight through
+   * and stops on a string, so a sound queued just before a line fires on
+   * the frame that line appears -- rather than several pages earlier, when
+   * the move happened to resolve.
+   */
+  private resolve(attacker: MonState, defender: MonState, mv: ReturnType<typeof move>, byPlayer: boolean): Step[] {
     const result = applyMove(attacker, defender, mv);
-    const lines: string[] = [];
+    const lines: Step[] = [];
 
     if (result.missed) {
       audio.play('miss');
@@ -360,12 +369,15 @@ export class BattleScene implements Scene {
       else if (mv.flavor) lines.push(mv.flavor);
     }
 
-    // Only when HP actually came back: a spent heal reports "no patches left".
-    if (result.healed > 0) audio.play('heal');
-    // Likewise, a stat already at its floor reports "cannot go further".
-    if (result.statChanged && mv.effect === 'debuff-attack') audio.play('debuff');
-
-    if (result.statText) lines.push(result.statText);
+    // Only when something actually moved. A spent heal says "no patches
+    // left" and a stat at its limit says "cannot go further"; neither has
+    // anything to announce.
+    const landed = result.healed > 0 || result.statChanged;
+    const cue = landed ? STAT_SOUND[mv.effect] : undefined;
+    if (result.statText) {
+      if (cue) lines.push(() => audio.play(cue));
+      lines.push(result.statText);
+    }
     if (result.recoil > 0) lines.push(`${attacker.spec.name} took ${result.recoil} from the blast radius!`);
 
     return lines;
@@ -741,6 +753,20 @@ export class BattleScene implements Scene {
     drawShadowText(r, name, left, y + 6, '#3a3438', '#d8d8c0');
   }
 }
+
+/**
+ * The cue that plays as a stat line appears.
+ *
+ * Buffs borrow the heal sound: both are the same beat -- a turn spent on
+ * yourself rather than on them -- and it already reads as something going
+ * your way. Debuffs keep their own.
+ */
+const STAT_SOUND: Partial<Record<ReturnType<typeof move>['effect'], SoundName>> = {
+  heal: 'heal',
+  'buff-attack': 'heal',
+  'buff-defense': 'heal',
+  'debuff-attack': 'debuff',
+};
 
 /** Clearance between the panel's drawn border and the text inside it. */
 const TEXT_PAD = 4;

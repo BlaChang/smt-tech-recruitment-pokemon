@@ -51,7 +51,7 @@ SFX = {
     'gate':    '0023',   # a gate swinging round
     'solved':  '000E',   # a puzzle completing
     'hit':     '0014',   # a move connecting in battle
-    'heal':    '00EF',   # a healing move restoring HP
+    'heal':    '00EF',   # a heal restoring HP, and any stat going UP
     'debuff':  '00F5',   # a move lowering an opponent's stat
     'lowHp':   '005A',   # the warning beep while your mon is in the red
     'badge':   '0032',   # beating Arpit
